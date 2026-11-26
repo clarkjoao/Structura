@@ -43,6 +43,7 @@ export async function dispatchCanvasKeydown(
   if (
     dispatch.labelFieldHandler &&
     !isCanvasEditingLocked(dispatch.flags) &&
+    !dispatch.flags.isCanvasLocked &&
     !isCanvasOverlayOpen(dispatch.flags) &&
     dispatch.labelFieldHandler(event)
   )
@@ -65,6 +66,9 @@ export async function dispatchCanvasKeydown(
   if (handleCompareModeKeys(event, dispatch.flags, dispatch.setCompareVersion)) return;
 
   if (isCanvasEditingLocked(dispatch.flags) || isCanvasOverlayOpen(dispatch.flags)) return;
+
+  // Locked from the Controls padlock: no edit chord and no tool chord runs.
+  if (dispatch.flags.isCanvasLocked) return;
 
   if (await runClaimingChain(event, dispatch.editHandlers)) return;
 

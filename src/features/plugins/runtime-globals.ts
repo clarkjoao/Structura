@@ -1,6 +1,8 @@
 import React from "react";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as JsxDevRuntime from "react/jsx-dev-runtime";
+import type { PluginUiKit } from "./plugin.types";
+import { PLUGIN_UI_KIT } from "./ui-kit";
 
 /**
  * The host's own React instance and JSX runtimes, exposed on `window` so that plugin
@@ -21,12 +23,18 @@ import * as JsxDevRuntime from "react/jsx-dev-runtime";
 export const PLUGIN_REACT_GLOBAL = "__REACT__";
 export const PLUGIN_JSX_RUNTIME_GLOBAL = "__REACT_JSX_RUNTIME__";
 export const PLUGIN_JSX_DEV_RUNTIME_GLOBAL = "__REACT_JSX_DEV_RUNTIME__";
+/**
+ * v1.18 — the UI kit (`PLUGIN_UI_KIT`), imported by bundled plugins as `@structura/ui`
+ * (external, `globals: { "@structura/ui": "__STRUCTURA_UI__" }`).
+ */
+export const PLUGIN_UI_GLOBAL = "__STRUCTURA_UI__";
 
 declare global {
   interface Window {
     [PLUGIN_REACT_GLOBAL]?: typeof React;
     [PLUGIN_JSX_RUNTIME_GLOBAL]?: typeof JsxRuntime;
     [PLUGIN_JSX_DEV_RUNTIME_GLOBAL]?: typeof JsxDevRuntime;
+    [PLUGIN_UI_GLOBAL]?: PluginUiKit;
   }
 }
 
@@ -42,5 +50,6 @@ export function installPluginRuntimeGlobals(): void {
   window[PLUGIN_REACT_GLOBAL] = React;
   window[PLUGIN_JSX_RUNTIME_GLOBAL] = JsxRuntime;
   window[PLUGIN_JSX_DEV_RUNTIME_GLOBAL] = JsxDevRuntime;
+  window[PLUGIN_UI_GLOBAL] = PLUGIN_UI_KIT;
   installed = true;
 }

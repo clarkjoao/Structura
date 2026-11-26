@@ -75,6 +75,14 @@ const REFERENCE_LABEL_KEY: Record<ReferenceMode, string> = {
   off: "canvasToolbar.arrange.referencesOff",
 };
 
+/**
+ * The reference modes the menu offers. `auto` (tried hub by hub, kept only where it reads better)
+ * is no longer offered; a diagram that already uses it still shows it, so it can be left.
+ */
+const OFFERED_REFERENCE_MODES: readonly ReferenceMode[] = REFERENCE_MODES.filter(
+  (mode) => mode !== "auto",
+);
+
 const REFERENCE_HINT_KEY: Record<ReferenceMode, string> = {
   rules: "canvasToolbar.arrange.referencesRulesHint",
   auto: "canvasToolbar.arrange.referencesAutoHint",
@@ -139,6 +147,9 @@ export function ArrangeControl({
   const automatic = modeChoice && shown.mode === "automatic";
   const gaps = effectiveLayoutGaps(shown, labelled);
   const refs = referenceRules(shown);
+  const offeredReferenceModes = OFFERED_REFERENCE_MODES.includes(refs.mode)
+    ? OFFERED_REFERENCE_MODES
+    : REFERENCE_MODES;
   const sliderValues: Record<SliderKey, number> = {
     layerGap: gaps.layerGap,
     nodeGap: gaps.nodeGap,
@@ -444,9 +455,12 @@ export function ArrangeControl({
                     <div
                       role="radiogroup"
                       aria-label={t("canvasToolbar.arrange.references")}
-                      className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1"
+                      className={cn(
+                        "grid gap-1 rounded-lg bg-muted p-1",
+                        offeredReferenceModes.length === 3 ? "grid-cols-3" : "grid-cols-2",
+                      )}
                     >
-                      {REFERENCE_MODES.map((mode) => {
+                      {offeredReferenceModes.map((mode) => {
                         const checked = refs.mode === mode;
                         return (
                           <button

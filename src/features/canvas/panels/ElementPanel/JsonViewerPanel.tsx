@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyMonacoEditor";
 import type { JsonViewerComponent, ComponentPatch } from "@/features/diagram";
 import { CommitField, ElementScaffold, PanelSection } from "./shell";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
+import { jsonSyntaxError } from "../../nodes/JsonViewerNode/jsonOutline";
 
 interface JsonViewerPanelProps {
   component: JsonViewerComponent;
@@ -13,15 +14,6 @@ interface JsonViewerPanelProps {
   removeComponent: (id: string) => void;
   focusTitleTrigger?: number;
   onFocusElement?: (componentId: string) => void;
-}
-
-function isValidJson(raw: string): boolean {
-  try {
-    JSON.parse(raw);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function formatJson(raw: string): string {
@@ -56,40 +48,33 @@ export default function JsonViewerPanel({
   const { t } = useTranslation();
   const { theme } = useTheme();
   const editorTheme = theme === "dark" ? "vs-dark" : "light";
+  const saved = formatJson(component.jsonContent ?? "{}");
 
-  const [jsonDraft, setJsonDraft] = useState(() => formatJson(component.jsonContent ?? "{}"));
-  const [parseError, setParseError] = useState(false);
-  const [isEditingJson, setIsEditingJson] = useState(false);
+  // The editor is always editable: a draft that differs from what is saved can be applied when it
+  // parses, or discarded. No separate "edit mode" to enter first.
+  const [draft, setDraft] = useState(saved);
+  const dirty = draft !== saved;
+  const error = useMemo(() => jsonSyntaxError(draft), [draft]);
 
+  // Someone else (the canvas node, a collaborator) saved: follow it unless the author is mid-edit.
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
   useEffect(() => {
-    if (!isEditingJson) {
-      setJsonDraft(formatJson(component.jsonContent ?? "{}"));
-    }
-  }, [component.jsonContent, isEditingJson]);
+    if (!dirtyRef.current) setDraft(saved);
+  }, [saved]);
 
-  const handleCommitJson = () => {
-    if (!isValidJson(jsonDraft)) {
-      setParseError(true);
-      return;
-    }
-    setParseError(false);
-    setIsEditingJson(false);
-    updateComponent(component.id, { jsonContent: jsonDraft });
-  };
+  const apply = useCallback(() => {
+    if (!dirty || error) return;
+    const formatted = formatJson(draft);
+    setDraft(formatted);
+    updateComponent(component.id, { jsonContent: formatted });
+  }, [component.id, dirty, draft, error, updateComponent]);
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
 
-  const handleCancelJson = () => {
-    setJsonDraft(formatJson(component.jsonContent ?? "{}"));
-    setParseError(false);
-    setIsEditingJson(false);
-  };
-
-  const handleFormatJson = () => {
-    if (!isValidJson(jsonDraft)) {
-      setParseError(true);
-      return;
-    }
-    setJsonDraft(formatJson(jsonDraft));
-    setParseError(false);
+  const discard = () => setDraft(saved);
+  const format = () => {
+    if (!error) setDraft(formatJson(draft));
   };
 
   return (
@@ -118,53 +103,20 @@ export default function JsonViewerPanel({
             <span className="text-xs font-medium text-muted-foreground">
               {t("jsonViewer.jsonContent")}
             </span>
-            <div className="flex items-center gap-1">
-              {!isEditingJson ? (
-                <button
-                  type="button"
-                  onClick={() => setIsEditingJson(true)}
-                  className="text-[11px] text-primary hover:underline"
-                >
-                  {t("jsonViewer.edit")}
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleFormatJson}
-                    className="text-[11px] text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    {t("jsonViewer.format")}
-                  </button>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <button
-                    type="button"
-                    onClick={handleCommitJson}
-                    className="text-[11px] text-green-500 hover:underline"
-                  >
-                    {t("common.save")}
-                  </button>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <button
-                    type="button"
-                    onClick={handleCancelJson}
-                    className="text-[11px] text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    {t("common.cancel")}
-                  </button>
-                </>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={format}
+              disabled={!!error}
+              className="rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
+            >
+              {t("jsonViewer.format")}
+            </button>
           </div>
-
-          {parseError && (
-            <p className="mb-1 text-[11px] text-destructive">{t("jsonViewer.invalidJson")}</p>
-          )}
 
           <div
             className={cn(
-              "overflow-hidden rounded-md border",
-              isEditingJson ? "border-primary/50" : "border-border",
+              "overflow-hidden rounded-t-md border",
+              error ? "border-destructive/60" : dirty ? "border-primary/50" : "border-border",
             )}
             style={{ height: 320 }}
           >
@@ -172,24 +124,68 @@ export default function JsonViewerPanel({
               height="100%"
               language="json"
               theme={editorTheme}
-              value={jsonDraft}
-              onChange={(value: Parameters<NonNullable<EditorProps["onChange"]>>[0]) => {
-                if (isEditingJson) {
-                  setJsonDraft(value ?? "");
-                  setParseError(false);
-                }
-              }}
-              options={{
-                ...MONACO_OPTIONS,
-                readOnly: !isEditingJson,
-                renderLineHighlight: isEditingJson ? "line" : "none",
-              }}
+              value={draft}
+              onChange={(value: Parameters<NonNullable<EditorProps["onChange"]>>[0]) =>
+                setDraft(value ?? "")
+              }
+              options={MONACO_OPTIONS}
               onMount={(editor: Parameters<NonNullable<EditorProps["onMount"]>>[0]) => {
                 editor.getDomNode()?.addEventListener("keydown", (keyboardEvent: Event) => {
                   keyboardEvent.stopPropagation();
+                  if (
+                    keyboardEvent instanceof KeyboardEvent &&
+                    keyboardEvent.key === "Enter" &&
+                    (keyboardEvent.metaKey || keyboardEvent.ctrlKey)
+                  ) {
+                    keyboardEvent.preventDefault();
+                    applyRef.current();
+                  }
                 });
               }}
             />
+          </div>
+
+          {/* The status line: what the draft is, and what can be done with it. */}
+          <div
+            role="status"
+            data-testid="json-status"
+            className={cn(
+              "flex items-center gap-2 rounded-b-md border border-t-0 px-2.5 py-1.5 text-[11px]",
+              error ? "border-destructive/60 bg-destructive/5" : "border-border bg-secondary/40",
+            )}
+          >
+            <span
+              className={cn("min-w-0 flex-1", error ? "text-destructive" : "text-muted-foreground")}
+              title={error?.message}
+            >
+              {error
+                ? error.line
+                  ? t("jsonViewer.errorAt", { line: error.line, column: error.column })
+                  : t("jsonViewer.invalidShort")
+                : dirty
+                  ? t("jsonViewer.unsaved")
+                  : t("jsonViewer.valid")}
+            </span>
+            {dirty && (
+              <>
+                <button
+                  type="button"
+                  onClick={discard}
+                  className="rounded px-1.5 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  {t("jsonViewer.discard")}
+                </button>
+                <button
+                  type="button"
+                  onClick={apply}
+                  disabled={!!error}
+                  title={t("jsonViewer.applyHint")}
+                  className="rounded bg-primary px-2 py-0.5 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+                >
+                  {t("jsonViewer.apply")}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </PanelSection>

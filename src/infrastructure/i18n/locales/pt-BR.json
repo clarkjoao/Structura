@@ -92,7 +92,8 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Tipo de transporte",
     "copySuffix": " (cópia)",
-    "defaultNamePrefix": "Novo"
+    "defaultNamePrefix": "Novo",
+    "selectPlaceholder": "Selecionar…"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -303,30 +304,41 @@
   },
   "storage": {
     "warning": {
-      "title": "Espaço local quase esgotado",
-      "description": "A usar {{used}} de {{quota}} disponíveis. Diagramas futuros podem não ser guardados."
+      "title": "Espaço do navegador quase no fim",
+      "description": "Usando {{used}} de {{quota}}. Diagramas novos podem não ser salvos."
     },
     "danger": {
-      "title": "Espaço local crítico",
-      "description": "A usar {{used}} de {{quota}}. Novos elementos podem não ser guardados."
+      "title": "Espaço do navegador crítico",
+      "description": "Usando {{used}} de {{quota}}. Novos elementos podem não ser salvos."
     },
     "critical": {
-      "title": "Não foi possível guardar",
-      "description": "O armazenamento local está cheio. Ligue uma pasta ou liberte espaço para continuar."
+      "title": "Não foi possível salvar no navegador",
+      "description": "O armazenamento do navegador está cheio. Conecte uma pasta ou libere espaço para continuar."
     },
     "suggest": {
-      "title": "Sincronizar com uma pasta",
-      "description": "O seu workspace está grande. Ligue uma pasta local para manter o seu trabalho seguro mesmo que o armazenamento do navegador encha."
+      "title": "Sincronize com uma pasta",
+      "description": "Seu workspace está grande. Conecte uma pasta local para manter o trabalho seguro mesmo se o armazenamento do navegador encher."
     },
     "urgentSuggest": {
       "title": "Sincronize com uma pasta agora",
-      "description": "O armazenamento do navegador está quase cheio. Ligue uma pasta para não perder nada se o armazenamento for limpo."
+      "description": "O armazenamento do navegador está quase cheio. Conecte uma pasta para não perder nada se ele for limpo."
     },
-    "freed": "{{amount}} libertados com sucesso.",
+    "freed": "{{amount}} liberados.",
     "localStorageQuota": "~5 MB",
     "action": {
-      "clear": "Libertar espaço",
-      "connectFolder": "Ligar pasta"
+      "clear": "Liberar espaço",
+      "connectFolder": "Conectar pasta",
+      "restoreFolder": "Restaurar acesso"
+    },
+    "savedToFolder": {
+      "title": "O navegador ficou sem espaço",
+      "description": "Seu trabalho continua sendo salvo na pasta {{folder}}. Só a cópia de segurança no navegador parou de ser atualizada."
+    },
+    "restoreFolder": {
+      "description": "O armazenamento do navegador está cheio e a pasta {{folder}} perdeu a permissão. Restaure o acesso para continuar salvando."
+    },
+    "folderFailing": {
+      "description": "O armazenamento do navegador está cheio e a última gravação na pasta {{folder}} falhou. Estamos tentando de novo; mantenha esta aba aberta até aparecer salvo."
     }
   },
   "filesystem": {
@@ -482,7 +494,10 @@
       "outline": "Borda e preenchimento",
       "markerStart": "Extremidade inicial",
       "markerEnd": "Extremidade final"
-    }
+    },
+    "savedToFolder": "Salvo na pasta",
+    "folderSaveError": "Não salvou na pasta",
+    "folderSaveErrorHint": "A última gravação na pasta falhou. Ela é tentada de novo sozinha em alguns segundos."
   },
   "compareMode": {
     "added": "Adicionado",
@@ -526,11 +541,6 @@
     "showingVersion": "O canvas mostra a Versão {{name}}",
     "panel": "Painel",
     "note": "Nota",
-    "awsServices": "AWS Services",
-    "gcpServices": "GCP Services",
-    "azureServices": "Azure Services",
-    "kubernetesServices": "Kubernetes",
-    "ossServices": "Open source",
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
@@ -1001,7 +1011,27 @@
     "invalidJson": "JSON inválido — corrija antes de salvar",
     "schemaRef": "Schema / Referência",
     "schemaRefPlaceholder": "ex: https://schema.org/...",
-    "jsonContent": "Conteúdo JSON"
+    "jsonContent": "Conteúdo JSON",
+    "invalidShort": "JSON inválido",
+    "more": "+{{count}} mais",
+    "valid": "JSON válido",
+    "unsaved": "Válido, ainda não aplicado",
+    "errorAt": "JSON inválido na linha {{line}}, coluna {{column}}",
+    "apply": "Aplicar",
+    "applyHint": "Aplicar (⌘/Ctrl+Enter)",
+    "discard": "Descartar",
+    "kinds": {
+      "string": "texto",
+      "number": "número",
+      "boolean": "sim/não",
+      "null": "vazio",
+      "array_one": "lista de {{count}}",
+      "array_other": "lista de {{count}}",
+      "object_one": "{{count}} chave",
+      "object_other": "{{count}} chaves"
+    },
+    "emptyObject": "Objeto vazio",
+    "emptyArray": "Lista vazia"
   },
   "nodeTypes": {
     "db-table": "Tabela de banco de dados",
@@ -1052,222 +1082,6 @@
     },
     "component": {
       "description": "Um módulo ou componente dentro de um container. Use no nível de componente C4."
-    },
-    "gcp": {
-      "categories": {
-        "gcp-compute": {
-          "label": "Compute",
-          "description": "Serviços de computação do GCP (VMs, containers, serverless)."
-        },
-        "gcp-storage": {
-          "label": "Storage",
-          "description": "Serviços de armazenamento do GCP (object storage, discos)."
-        },
-        "gcp-database": {
-          "label": "Databases",
-          "description": "Bancos gerenciados do GCP (SQL, Spanner, BigQuery)."
-        },
-        "gcp-networking": {
-          "label": "Networking",
-          "description": "Rede e conectividade do GCP."
-        },
-        "gcp-security": {
-          "label": "Security",
-          "description": "Serviços de segurança e identidade do GCP."
-        },
-        "gcp-analytics": {
-          "label": "Analytics",
-          "description": "Analítica de dados e observabilidade do GCP."
-        },
-        "gcp-ai": {
-          "label": "AI & Machine Learning",
-          "description": "Serviços de IA e machine learning do GCP."
-        },
-        "gcp-devtools": {
-          "label": "Developer Tools",
-          "description": "Ferramentas de desenvolvimento e DevOps do GCP."
-        },
-        "gcp-integration": {
-          "label": "Integration",
-          "description": "Serviços de integração e mensageria do GCP."
-        },
-        "gcp-management": {
-          "label": "Management",
-          "description": "Ferramentas de gestão e marketplace do GCP."
-        },
-        "gcp-media": {
-          "label": "Media",
-          "description": "Serviços de mídia do GCP."
-        },
-        "gcp-general": {
-          "label": "General",
-          "description": "Demais serviços do GCP."
-        }
-      }
-    },
-    "azure": {
-      "categories": {
-        "azure-compute": {
-          "label": "Compute",
-          "description": "Serviços de computação do Azure (VMs, App Service, Functions)."
-        },
-        "azure-storage": {
-          "label": "Storage",
-          "description": "Serviços de armazenamento do Azure (Blob, Files, Queues)."
-        },
-        "azure-database": {
-          "label": "Databases",
-          "description": "Bancos gerenciados do Azure (SQL, Cosmos DB, Redis)."
-        },
-        "azure-networking": {
-          "label": "Networking",
-          "description": "Rede e conectividade do Azure."
-        },
-        "azure-security": {
-          "label": "Security",
-          "description": "Serviços de segurança e identidade do Azure."
-        },
-        "azure-analytics": {
-          "label": "Analytics",
-          "description": "Serviços de analítica de dados do Azure."
-        },
-        "azure-ai": {
-          "label": "AI & Machine Learning",
-          "description": "Serviços de IA e machine learning do Azure."
-        },
-        "azure-integration": {
-          "label": "Integration",
-          "description": "Serviços de integração e mensageria do Azure."
-        },
-        "azure-devtools": {
-          "label": "Developer Tools",
-          "description": "Ferramentas de desenvolvimento e DevOps do Azure."
-        },
-        "azure-iot": {
-          "label": "IoT",
-          "description": "Serviços de Internet das Coisas do Azure."
-        },
-        "azure-management": {
-          "label": "Management",
-          "description": "Ferramentas de gestão e monitoramento do Azure."
-        },
-        "azure-media": {
-          "label": "Media",
-          "description": "Serviços de mídia do Azure."
-        },
-        "azure-general": {
-          "label": "General",
-          "description": "Demais serviços do Azure."
-        }
-      }
-    },
-    "aws": {
-      "categories": {
-        "aws-compute": {
-          "label": "Compute",
-          "description": "Serviços de computação da AWS (EC2, Lambda, …)."
-        },
-        "aws-storage": {
-          "label": "Storage",
-          "description": "Serviços de armazenamento da AWS (S3, EBS, EFS, …)."
-        },
-        "aws-database": {
-          "label": "Databases",
-          "description": "Bancos gerenciados da AWS (RDS, DynamoDB, …)."
-        },
-        "aws-networking": {
-          "label": "Networking",
-          "description": "Rede e entrega de conteúdo da AWS."
-        },
-        "aws-security": {
-          "label": "Security",
-          "description": "Serviços de segurança e identidade da AWS."
-        },
-        "aws-analytics": {
-          "label": "Analytics",
-          "description": "Serviços de analítica de dados da AWS."
-        },
-        "aws-ml": {
-          "label": "Machine Learning",
-          "description": "Serviços de machine learning e IA da AWS."
-        },
-        "aws-integration": {
-          "label": "Application Integration",
-          "description": "Serviços de mensageria e integração da AWS."
-        },
-        "aws-management": {
-          "label": "Management",
-          "description": "Ferramentas de gestão e governança da AWS."
-        },
-        "aws-developer": {
-          "label": "Developer Tools",
-          "description": "Ferramentas de desenvolvimento da AWS."
-        },
-        "aws-containers": {
-          "label": "Containers",
-          "description": "Serviços de containers da AWS (ECS, EKS, …)."
-        },
-        "aws-media": {
-          "label": "Media",
-          "description": "Serviços de mídia da AWS."
-        },
-        "aws-migration": {
-          "label": "Migration",
-          "description": "Serviços de migração e transferência da AWS."
-        },
-        "aws-iot": {
-          "label": "Internet of Things",
-          "description": "Serviços de IoT da AWS."
-        },
-        "aws-end-user": {
-          "label": "End User Computing",
-          "description": "Serviços de computação para usuário final da AWS."
-        },
-        "aws-general": {
-          "label": "General",
-          "description": "Demais serviços e agrupamentos da AWS."
-        }
-      }
-    },
-    "k8s": {
-      "categories": {
-        "k8s-workloads": {
-          "label": "Workloads",
-          "description": "Workloads do Kubernetes (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod)."
-        },
-        "k8s-networking": {
-          "label": "Networking",
-          "description": "Rede do Kubernetes (Service, Ingress, NetworkPolicy)."
-        },
-        "k8s-storage": {
-          "label": "Storage",
-          "description": "Armazenamento do Kubernetes (PersistentVolume, PVC, StorageClass)."
-        },
-        "k8s-config": {
-          "label": "Config",
-          "description": "Objetos de configuração do Kubernetes (ConfigMap, Secret)."
-        }
-      }
-    },
-    "oss": {
-      "categories": {
-        "oss-datastore": {
-          "label": "Datastore",
-          "description": "Datastores open source (Redis, …)."
-        },
-        "oss-messaging": {
-          "label": "Messaging",
-          "description": "Mensageria e streaming open source (Apache Kafka, …)."
-        }
-      },
-      "services": {
-        "redis": {
-          "description": "Armazenamento chave-valor em memória usado como cache, sessão ou broker de mensagens."
-        },
-        "kafka": {
-          "description": "Plataforma distribuída de streaming de eventos para tópicos duráveis de alta vazão."
-        }
-      }
     },
     "families": {
       "structural": {
@@ -2001,10 +1815,6 @@
     "sourceType": "Cor do tipo de fronteira",
     "sourceCustom": "Cor personalizada",
     "backToDerived": "Voltar ao derivado",
-    "content": "Conteúdo",
-    "contentCount_one": "{{count}} elemento",
-    "contentCount_other": "{{count}} elementos",
-    "empty": "Nada dentro ainda",
     "collapseOnCanvas": "Recolher no canvas"
   },
   "legend": {
@@ -2149,12 +1959,15 @@
   },
   "connectionsTab": {
     "noneFound": "Nenhuma conexão encontrada.",
-    "filterPlaceholder": "Filtrar por label...",
+    "filterPlaceholder": "Filtrar por nome ou protocolo…",
     "noResultsFor": "Nenhum resultado para “{{query}}”.",
     "incoming": "Entradas",
     "outgoing": "Saídas",
     "dragReorderHint": "Arraste as linhas para reordenar os handles.",
-    "selectAll": "Selecionar todas"
+    "selectAll": "Destacar todas",
+    "viaRef": "via referência {{index}}",
+    "goTo": "Ir para {{name}}",
+    "drawnElsewhere": "Desenhado em outros lugares"
   },
   "technologyCombobox": {
     "searchPlaceholder": "Buscar ou digitar...",
@@ -2352,13 +2165,19 @@
     "aria": "Elemento desconhecido: {{name}}",
     "defaultName": "Elemento desconhecido",
     "badge": "desconhecido",
-    "emptyHint": "Sem conteúdo disponível"
+    "emptyHint": "Sem conteúdo disponível",
+    "cannotDraw": "O Structura não sabe desenhar este tipo."
   },
   "svgNode": {
     "aria": "Elemento SVG: {{name}}",
     "defaultName": "SVG",
     "showBorder": "Mostrar borda",
-    "showBorderHint": "Moldura de card em volta da arte. Desligado mostra só o SVG."
+    "showBorderHint": "Moldura de card em volta da arte. Desligado mostra só o SVG.",
+    "size": "Tamanho original {{width}} × {{height}}",
+    "replace": "Substituir…",
+    "download": "Baixar",
+    "emptyHint": "Sem arte ainda. Escolha um arquivo .svg no painel ou cole um no canvas.",
+    "choose": "Escolher…"
   },
   "cardNode": {
     "drillAria": "Explorar interior do elemento {{id}}",
@@ -2380,6 +2199,7 @@
   "flows": {
     "panelTitle": "Fluxos",
     "importFlow": "Importar fluxo",
+    "importShort": "Importar",
     "importDialog": {
       "directionApproximated": "As direções BT e RL do Mermaid são importadas como de cima para baixo e da esquerda para a direita.",
       "directionKept": "Importado na direção deste diagrama; troque em Organizar se quiser a outra.",
@@ -3499,6 +3319,14 @@
     }
   },
   "shared": {
+    "menu": {
+      "trigger": "Refs",
+      "intro": "Desenhe este elemento de novo onde ele é usado, em vez de arestas longas cruzando o diagrama.",
+      "create": "Nova referência ao lado",
+      "createHint": "Ou Alt+arraste o elemento até onde ele é usado",
+      "refRow": "{{name}} — referência {{index}}",
+      "openTab": "Referências: criar uma, ver quem usa"
+    },
     "chip": "compartilhado",
     "uses_one": "{{count}} uso",
     "uses_other": "{{count}} usos",
@@ -3506,12 +3334,6 @@
     "usedBy_other": "Usado por {{count}}",
     "goToOriginal": "Ir para o original",
     "focusOriginal": "Focar no elemento principal",
-    "mode": {
-      "label": "Compartilhado",
-      "edges": "Arestas",
-      "badge": "Selos",
-      "ref": "Referências"
-    },
     "showEdges_one": "Mostrar a aresta",
     "showEdges_other": "Mostrar as {{count}} arestas",
     "hideEdges_one": "Esconder a aresta",
@@ -3525,17 +3347,15 @@
     "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
   },
   "elementCatalog": {
+    "asNode": "{{name}} — nó",
+    "asGroup": "{{name}} — grupo",
+    "groupSynonyms": "grupo|cluster|agrupador|fronteira|group",
     "groups": {
       "c4": "C4",
       "flowchart": "Fluxograma",
       "canvas": "Canvas e estrutura",
       "services": "Serviços",
       "presets": "Meus presets",
-      "aws": "AWS",
-      "gcp": "GCP",
-      "azure": "Azure",
-      "k8s": "Kubernetes",
-      "oss": "Open source",
       "patterns": "Patterns"
     },
     "concepts": {
@@ -3903,5 +3723,19 @@
       "dock": "Fixar ao lado do canvas",
       "undock": "Desacoplar"
     }
+  },
+  "unknownElementPanel": {
+    "title": {
+      "content": "Conteúdo guardado como veio",
+      "plugin": "De um plugin que não está instalado",
+      "removed": "Um tipo que o Structura não tem mais"
+    },
+    "body": {
+      "content": "O Structura não lê este conteúdo; ele fica intacto, junto com as conexões do elemento.",
+      "plugin": "O plugin {{plugin}} desenha este elemento. Instale-o para vê-lo de novo; até lá, o elemento e suas conexões ficam como estão.",
+      "removed": "Este elemento foi salvo com um tipo que não existe mais. O nome e as conexões ficam; troque-o por outro elemento quando puder."
+    },
+    "content": "Conteúdo",
+    "copy": "Copiar conteúdo"
   }
 }

@@ -7,6 +7,7 @@ import { render, screen } from "@testing-library/react";
 const mockState = vi.hoisted(() => ({
   folderStatus: "disconnected" as
     "disconnected" | "connecting" | "connected" | "needs_permission" | "error",
+  lastWrite: "unknown" as "unknown" | "ok" | "failed",
 }));
 
 // We mock the barrel that the banner actually imports from. Vitest resolves
@@ -16,7 +17,11 @@ vi.mock("@/infrastructure/persistence", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/infrastructure/persistence")>();
   return {
     ...actual,
-    useFileSystemStorage: () => ({ status: mockState.folderStatus }) as never,
+    useFolderSyncStatus: () => ({
+      status: mockState.folderStatus,
+      folderName: "workspace",
+      lastWrite: mockState.lastWrite,
+    }),
     isFileSystemSupported: true,
   };
 });
@@ -54,6 +59,7 @@ describe("shouldSuggestFolderSync helper", () => {
 describe("StorageWarningBanner", () => {
   beforeEach(() => {
     mockState.folderStatus = "disconnected";
+    mockState.lastWrite = "unknown";
     setHealth("ok");
   });
 
@@ -93,25 +99,44 @@ describe("StorageWarningBanner", () => {
     expect(buttons[0]).toHaveAccessibleName(/connect folder/i);
   });
 
-  it("keeps both buttons when folder is connected (no suggestion)", () => {
-    setHealth("warning");
+  it("never asks to connect a folder that is already connected", () => {
     mockState.folderStatus = "connected";
+    for (const level of ["warning", "danger"] as const) {
+      setHealth(level);
+      const { container, unmount } = render(<StorageWarningBanner />);
+      // The folder holds the work: a near-full browser backup is not worth a banner.
+      expect(container.firstChild).toBeNull();
+      unmount();
+    }
 
+    setHealth("critical");
     render(<StorageWarningBanner />);
+    expect(screen.getByText("The browser is out of space")).toBeInTheDocument();
+    expect(screen.getByText(/still being saved to the workspace folder/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /connect folder/i })).toBeNull();
+    expect(screen.getByRole("button", { name: /dismiss/i })).toBeInTheDocument();
+  });
 
-    // Falls back to the pre-existing generic copy.
-    expect(screen.getByText("Local storage almost full")).toBeInTheDocument();
+  it("keeps a full browser serious when the folder's last write failed too", () => {
+    mockState.folderStatus = "connected";
+    mockState.lastWrite = "failed";
+    setHealth("critical");
+    render(<StorageWarningBanner />);
+    expect(screen.getByText(/last write to the workspace folder failed/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /dismiss/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /connect folder/i })).toBeNull();
+  });
 
-    // No suggestion copy is shown.
-    expect(screen.queryByText("Sync to a folder")).not.toBeInTheDocument();
-
-    // Both remediation buttons remain accessible.
-    expect(screen.getByRole("button", { name: /free up space/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /connect folder/i })).toBeInTheDocument();
+  it("offers to restore access, not to connect, when the folder lost its permission", () => {
+    mockState.folderStatus = "needs_permission";
+    setHealth("critical");
+    render(<StorageWarningBanner />);
+    expect(screen.getByRole("button", { name: /restore access/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /connect folder/i })).toBeNull();
   });
 
   it("states the localStorage ceiling, or the origin quota when the workspace is in IndexedDB", () => {
-    mockState.folderStatus = "connected";
+    mockState.folderStatus = "connecting";
     setHealth("warning");
     const { unmount } = render(<StorageWarningBanner />);
     expect(screen.getByText(/Using 3\.3 MB of ~5 MB available/)).toBeInTheDocument();

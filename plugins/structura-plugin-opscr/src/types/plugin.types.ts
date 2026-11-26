@@ -6,7 +6,17 @@
  * file and re-run the sync instead of changing this file.
  */
 
-import type { ComponentType as ReactComponentType } from "react";
+import type {
+  ButtonHTMLAttributes,
+  ComponentType as ReactComponentType,
+  CSSProperties,
+  HTMLAttributes,
+  InputHTMLAttributes,
+  LabelHTMLAttributes,
+  ReactNode,
+  RefAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 import type { NodeTypes } from "@xyflow/react";
 
 /**
@@ -24,10 +34,12 @@ type DiagramNodeComponent = NodeTypes[string];
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.16.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.18.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
+  /** v1.17 — `registerElementPack` / `registerShape`. */
+  "canvas:elements",
   "io:importers",
   "io:exporters",
   "ui:panels",
@@ -427,6 +439,213 @@ export interface PluginNodeTypeDescriptor {
   selectable?: boolean;
 }
 
+/** v1.17 — text in both host locales. */
+export interface PluginLocalizedLabel {
+  en: string;
+  "pt-BR": string;
+}
+
+/** v1.17 — one category of a plugin's element pack: an element type `<pluginId>/<id>`. */
+export interface PluginElementPackCategory {
+  /** Lowercase letters, digits and dashes. */
+  id: string;
+  label: PluginLocalizedLabel;
+  description: PluginLocalizedLabel;
+  /** `H S% L%` (as the theme tokens) or a hex colour; `dark` defaults to `light`. */
+  accent: { light: string; dark?: string };
+  /** The vendor's own name for the category, where it differs from the label. */
+  vendorName?: string;
+}
+
+/** v1.17 — one service of a category, offered as its own catalog entry. */
+export interface PluginElementPackService {
+  /** Stored on the component as its catalog service id. */
+  id: string;
+  /** Proper noun, shown as written. */
+  name: string;
+  /** The category's `id`. */
+  category: string;
+  /** A key of `PluginElementPack.icons`. */
+  icon: string;
+  description?: PluginLocalizedLabel;
+  /** Catalog concepts ("queue", "database", …) the search and the assistant match on. */
+  concepts?: string[];
+  searchKeys?: string[];
+}
+
+/**
+ * v1.17 — an SVG shape: its outline (path data only, in `viewBox` units) is stretched to the
+ * node, the node's name drawn inside. Element type `<pluginId>/<id>`.
+ */
+export interface PluginShape {
+  id: string;
+  label: PluginLocalizedLabel;
+  description?: PluginLocalizedLabel;
+  /** `minX minY width height`. */
+  viewBox: string;
+  /** SVG path `d` strings — commands and numbers only. */
+  paths: string[];
+  size?: { width: number; height: number };
+  searchKeys?: string[];
+}
+
+/**
+ * v1.17 — capability "canvas:elements". A family of catalog elements (cards with an icon, like
+ * the AWS services) and shapes, offered in the palette, the element catalog, search and the
+ * assistant. Same format as the host's built-in packs (`elements/packs/<id>/pack.json`).
+ */
+export interface PluginElementPack {
+  /** Must equal the plugin's manifest id. */
+  id: string;
+  label: PluginLocalizedLabel;
+  /** Catalog group heading; `label` when absent. */
+  groupLabel?: PluginLocalizedLabel;
+  categories?: PluginElementPackCategory[];
+  services?: PluginElementPackService[];
+  shapes?: PluginShape[];
+  /** Category ids listed first. */
+  primaryCategories?: string[];
+  /** Service ids the catalog lists first. */
+  spotlightServices?: string[];
+  /** SVG markup by icon name; sanitized by the host. */
+  icons?: Record<string, string>;
+}
+
+// =============================================================================
+// UI kit (v1.18) — the host's design system, as `api.ui.*` and `@structura/ui`
+// =============================================================================
+
+/** v1.18 — what every kit component accepts for layout, besides its own props. */
+export interface PluginUiStyleProps {
+  className?: string;
+  style?: CSSProperties;
+}
+
+/** v1.18 — the host's button. */
+export interface PluginButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>, RefAttributes<HTMLButtonElement> {
+  variant?: "default" | "secondary" | "outline" | "ghost" | "destructive" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+}
+
+export type PluginInputProps = InputHTMLAttributes<HTMLInputElement> &
+  RefAttributes<HTMLInputElement>;
+export type PluginTextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> &
+  RefAttributes<HTMLTextAreaElement>;
+export type PluginLabelProps = LabelHTMLAttributes<HTMLLabelElement>;
+
+/** v1.18 — a form row: label, the control (children), and a hint or an error under it. */
+export interface PluginFieldProps extends PluginUiStyleProps {
+  label: ReactNode;
+  /** The control's id; the label points at it. */
+  htmlFor?: string;
+  hint?: ReactNode;
+  /** Shown instead of the hint, in the destructive colour. */
+  error?: ReactNode;
+  children: ReactNode;
+}
+
+export interface PluginCheckboxProps extends PluginUiStyleProps {
+  id?: string;
+  checked?: boolean;
+  defaultChecked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  disabled?: boolean;
+  "aria-label"?: string;
+}
+
+export type PluginSwitchProps = PluginCheckboxProps;
+
+export interface PluginSelectOption {
+  value: string;
+  label: ReactNode;
+  disabled?: boolean;
+}
+
+/** v1.18 — a single-choice list: options in, the picked value out. */
+export interface PluginSelectProps extends PluginUiStyleProps {
+  id?: string;
+  options: readonly PluginSelectOption[];
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  /** Shown while nothing is picked; the host's "Select…" when absent. */
+  placeholder?: ReactNode;
+  disabled?: boolean;
+  "aria-label"?: string;
+}
+
+export interface PluginBadgeProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: "default" | "secondary" | "destructive" | "outline";
+}
+
+export interface PluginCardProps extends PluginUiStyleProps {
+  title?: ReactNode;
+  description?: ReactNode;
+  /** Actions under the content, right-aligned. */
+  footer?: ReactNode;
+  children?: ReactNode;
+}
+
+export interface PluginTab {
+  value: string;
+  label: ReactNode;
+  content: ReactNode;
+  disabled?: boolean;
+}
+
+export interface PluginTabsProps extends PluginUiStyleProps {
+  tabs: readonly PluginTab[];
+  value?: string;
+  /** The first tab when absent. */
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+}
+
+/** v1.18 — a hint on hover or focus of `children` (one element). */
+export interface PluginTooltipProps {
+  content: ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
+  children: ReactNode;
+}
+
+export interface PluginSeparatorProps extends PluginUiStyleProps {
+  orientation?: "horizontal" | "vertical";
+}
+
+/** v1.18 — children in a row or a column, with a gap in the host's spacing scale. */
+export interface PluginStackProps extends PluginUiStyleProps {
+  direction?: "row" | "column";
+  /** Multiples of 4px; 2 (8px) when absent. */
+  gap?: 0 | 1 | 2 | 3 | 4 | 6 | 8;
+  align?: "start" | "center" | "end" | "stretch";
+  justify?: "start" | "center" | "end" | "between";
+  wrap?: boolean;
+  children?: ReactNode;
+}
+
+/**
+ * v1.18 — the host components a plugin may render, with the host's theme (light and dark),
+ * focus rings and disabled states. The same objects as `api.ui.*` and `@structura/ui`.
+ * Anything else: style with the theme tokens, e.g. `hsl(var(--muted-foreground))`.
+ */
+export interface PluginUiKit {
+  Button: ReactComponentType<PluginButtonProps>;
+  Input: ReactComponentType<PluginInputProps>;
+  Textarea: ReactComponentType<PluginTextareaProps>;
+  Label: ReactComponentType<PluginLabelProps>;
+  Field: ReactComponentType<PluginFieldProps>;
+  Checkbox: ReactComponentType<PluginCheckboxProps>;
+  Switch: ReactComponentType<PluginSwitchProps>;
+  Select: ReactComponentType<PluginSelectProps>;
+  Badge: ReactComponentType<PluginBadgeProps>;
+  Card: ReactComponentType<PluginCardProps>;
+  Tabs: ReactComponentType<PluginTabsProps>;
+  Tooltip: ReactComponentType<PluginTooltipProps>;
+  Separator: ReactComponentType<PluginSeparatorProps>;
+  Stack: ReactComponentType<PluginStackProps>;
+}
+
 /** v1.4 — a problem shown on a line of `CodeEditor`. Lines are 1-based. */
 export interface PluginEditorMarker {
   line: number;
@@ -790,6 +1009,13 @@ export interface StructuraPluginApi {
   readonly apiVersion: string;
 
   registerNodeType(descriptor: PluginNodeTypeDescriptor): void;
+  /**
+   * v1.17 — capability "canvas:elements". Registers the plugin's element pack (once); throws,
+   * registering nothing, when it is invalid or its id is not the plugin id.
+   */
+  registerElementPack(pack: PluginElementPack): void;
+  /** v1.17 — capability "canvas:elements". Adds one SVG shape to the plugin's palette group. */
+  registerShape(shape: PluginShape): void;
   registerExporter(handler: ExporterContribution): void;
   registerImporter(handler: ImporterContribution): void;
   /** v1.14 — capability "io:importers". An import offered on the workspace home. */
@@ -860,8 +1086,11 @@ export interface StructuraPluginApi {
    */
   registerChatContext(context: PluginChatContext): void;
 
-  /** v1.4 — host UI building blocks plugins render instead of bundling their own. */
-  readonly ui: {
+  /**
+   * v1.4 — host UI building blocks plugins render instead of bundling their own. v1.18 — the
+   * UI kit (`PluginUiKit`), also importable from `@structura/ui` in a bundled plugin.
+   */
+  readonly ui: PluginUiKit & {
     /** The host's code editor (Monaco, loaded on first render). */
     CodeEditor: ReactComponentType<PluginCodeEditorProps>;
   };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  GitBranch,
+  Route,
   Plus,
   Play,
   Trash2,
@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PanelColumn } from "../panels/ElementPanel/shell/PanelFrame";
-import { PanelHeader, type PanelMenuItem } from "../panels/ElementPanel/shell/PanelHeader";
+import { PanelHeader } from "../panels/ElementPanel/shell/PanelHeader";
 import MermaidImportDialog from "./MermaidImportDialog";
 import { useFlowViewStore } from "./useFlowViewStore";
 import { useHighlightRequests } from "../focus/highlightRequests";
@@ -329,39 +329,41 @@ const FlowPanel = ({
     ],
   );
 
-  const menu: PanelMenuItem[] = flowOrCompareLocked
-    ? []
-    : [
-        {
-          key: "import",
-          label: t("flows.importFlow"),
-          icon: FileInput,
-          onSelect: () => setShowMermaidImport(true),
-        },
-      ];
-
   return (
     <PanelColumn testId="flows-panel">
       <PanelHeader
-        icon={<GitBranch className="h-3.5 w-3.5" />}
+        icon={<Route className="h-3.5 w-3.5" />}
         typeLabel={t("flows.panelTitle")}
         name={t("flowPanel.listTitle", { count: flows.length })}
         namePlaceholder={t("flows.panelTitle")}
-        menu={menu}
+        menu={[]}
         onClose={onClose}
         subheader={
           <div className="space-y-2 px-1.5 pt-1">
-            {recordFlows && (
+            {/* Import sits beside New flow: both start a flow, one by recording, one from text. */}
+            <div className="flex gap-1.5">
+              {recordFlows && (
+                <Button
+                  size="sm"
+                  disabled={flowOrCompareLocked}
+                  onClick={onStartRecording}
+                  title={flowOrCompareLocked ? panelActionsLockedTitle : undefined}
+                  className="h-8 flex-1 gap-1.5"
+                >
+                  <Plus className="h-4 w-4" /> {t("flowPanel.newFlow")}
+                </Button>
+              )}
               <Button
                 size="sm"
+                variant="outline"
                 disabled={flowOrCompareLocked}
-                onClick={onStartRecording}
-                title={flowOrCompareLocked ? panelActionsLockedTitle : undefined}
-                className="h-8 w-full gap-1.5"
+                onClick={() => setShowMermaidImport(true)}
+                title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.importFlow")}
+                className={cn("h-8 gap-1.5", !recordFlows && "flex-1")}
               >
-                <Plus className="h-4 w-4" /> {t("flowPanel.newFlow")}
+                <FileInput className="h-4 w-4" /> {t("flows.importShort")}
               </Button>
-            )}
+            </div>
             {allTags.length > 0 && (
               <div
                 role="group"

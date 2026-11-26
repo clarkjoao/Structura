@@ -33,7 +33,7 @@ const TabBar = ({ active, onChange, showConnections, showServices, kindTab }: Ta
           aria-pressed={active === tab}
           data-testid={`element-tab-${tab}`}
           onClick={() => onChange(tab)}
-          className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+          className={`flex-1 whitespace-nowrap px-2 py-2 text-xs font-medium transition-colors ${
             active === tab
               ? "border-b-2 border-primary text-primary"
               : "text-muted-foreground hover:text-foreground"

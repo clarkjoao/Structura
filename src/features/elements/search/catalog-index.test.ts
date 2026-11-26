@@ -14,6 +14,10 @@ import {
 import { findMatchRanges, fold, foldWithMap, toSourceRange } from "./normalize";
 
 /** The AWS service an entry stands for, through the panel remap too (its id is `<category>:<service>`). */
+function isGroupVariant(entry: CatalogEntry): boolean {
+  return entry.id.endsWith("#group");
+}
+
 function serviceIdOrPanel(entry: CatalogEntry): string {
   return entry.id.split(":")[1] ?? entry.id;
 }
@@ -46,15 +50,31 @@ describe("registryCatalogEntries", () => {
   it("offers every palette entry the registry offers, once", () => {
     const { entries } = registryCatalogEntries();
     const expected = paletteEntriesForElements(offeredElements()).map((entry) => entry.key);
-    expect(entries.map((entry) => entry.id).sort()).toEqual([...expected].sort());
+    const nodeEntries = entries.filter((entry) => !isGroupVariant(entry));
+    // Every node entry is a palette entry; a service a family lists under two categories (AWS
+    // ECS, EKS, Fargate) is offered once, so only those may be missing.
+    const offered = new Set(nodeEntries.map((entry) => entry.id));
+    for (const id of offered) expect(expected, id).toContain(id);
+    const missing = expected.filter((key) => !offered.has(key));
+    expect(missing.length).toBeGreaterThan(0);
+    for (const key of missing) {
+      const twin = nodeEntries.find(
+        (entry) =>
+          entry.id.split(":")[0]!.split("-")[0] === key.split(":")[0]!.split("-")[0] &&
+          entry.id.split(":")[1] === key.split(":")[1]!.replace(/-\d+$/, ""),
+      );
+      expect(twin, key).toBeDefined();
+    }
     expect(new Set(entries.map((entry) => entry.id)).size).toBe(entries.length);
   });
 
-  it("orders C4, flowchart and canvas first, then the catalog families, then the rest", () => {
+  it("orders C4, AWS and canvas first, then flowchart, the other families, then the rest", () => {
     const ids = registryCatalogEntries().groups.map((group) => group.id);
-    const families = allCloudFamilies().map((family) => family.paletteCategoryId);
-    expect(ids.slice(0, 3)).toEqual(["c4", "flowchart", "canvas"]);
-    expect(ids.slice(3, 3 + families.length)).toEqual(families);
+    const families = allCloudFamilies()
+      .map((family) => family.paletteCategoryId)
+      .filter((id) => id !== "aws");
+    expect(ids.slice(0, 4)).toEqual(["c4", "aws", "canvas", "flowchart"]);
+    expect(ids.slice(4, 4 + families.length)).toEqual(families);
     expect(ids).toContain("deploy");
   });
 
@@ -66,7 +86,9 @@ describe("registryCatalogEntries", () => {
   });
 
   it("lists a family's spotlight services first, in its order", () => {
-    const aws = registryCatalogEntries().entries.filter((entry) => entry.groupId === "aws");
+    const aws = registryCatalogEntries().entries.filter(
+      (entry) => entry.groupId === "aws" && !isGroupVariant(entry),
+    );
     const spotlight = allCloudFamilies().find(
       (family) => family.id === "aws",
     )!.spotlightServiceIds!;
@@ -89,13 +111,35 @@ describe("registryCatalogEntries", () => {
     expect(shapes).not.toContain("circle");
   });
 
-  it("creates AWS container services as the panel kind that draws them", () => {
-    const vpc = registryCatalogEntries().entries.find((entry) => entry.id === "aws-networking:vpc");
-    expect(vpc?.insert).toEqual({
+  it("offers AWS services that can hold others both as a node and as a group", () => {
+    const entries = registryCatalogEntries().entries;
+    const node = entries.find((entry) => entry.id === "aws-compute:ecs");
+    const group = entries.find((entry) => entry.id === "aws-compute:ecs#group");
+    expect(node?.insert).toEqual({
+      kind: "element",
+      type: "aws-compute",
+      createOptions: { serviceId: "ecs" },
+    });
+    expect(group?.insert).toEqual({
       kind: "element",
       type: "panel",
-      createOptions: { panelKind: "vpc" },
+      createOptions: { panelKind: "ecs-cluster" },
     });
+    expect(node?.label).not.toBe(group?.label);
+    // The group sits right after its node.
+    expect(entries.indexOf(group!)).toBe(entries.indexOf(node!) + 1);
+  });
+
+  it("offers a boundary that is only ever a group (a VPC group, a subnet) as the group alone", () => {
+    const entries = registryCatalogEntries().entries;
+    const subnets = entries.filter((entry) => entry.id === "aws-general:private-subnet");
+    expect(subnets).toHaveLength(1);
+    expect(subnets[0]!.insert).toEqual({
+      kind: "element",
+      type: "panel",
+      createOptions: { panelKind: "private-subnet" },
+    });
+    expect(entries.some((entry) => entry.id.endsWith(":private-subnet#group"))).toBe(false);
   });
 
   it("derives counts from the entries", () => {

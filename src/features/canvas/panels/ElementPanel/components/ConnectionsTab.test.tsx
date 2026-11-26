@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useCallback } from "react";
+import "@/features/elements/bootstrap";
 import i18n from "@/infrastructure/i18n";
 import { useDiagramStore } from "@/features/diagram";
 import { HandleHighlightProvider } from "../../../contexts/HandleHighlightContext";
@@ -41,14 +42,29 @@ function seedZeroConnections() {
   return { nodeId: a.id };
 }
 
+function seedThroughReference() {
+  const store = useDiagramStore.getState();
+  const diagram = store.addDiagram("Refs", "container");
+  store.openDiagram(diagram.id);
+  const auth = store.addComponent("container", "Auth", null, { x: 600, y: 0 });
+  const orders = store.addComponent("container", "Orders", null, { x: 0, y: 300 });
+  const ref = useDiagramStore.getState().addSharedRef(auth.id, null, { x: 200, y: 300 })!;
+  store.addConnection(orders.id, ref.id, "HTTPS");
+  return { authId: auth.id, ordersId: orders.id, refId: ref.id };
+}
+
 function TabHarness({
   componentId,
   onHighlight,
   onClear,
+  references,
+  onFocusElement,
 }: {
   componentId: string;
   onHighlight?: (ids: ReadonlySet<string>) => void;
   onClear?: () => void;
+  references?: { canCreate: boolean };
+  onFocusElement?: (id: string) => void;
 }) {
   const {
     highlightedConnectionIds,
@@ -71,7 +87,11 @@ function TabHarness({
         clearHighlight,
       }}
     >
-      <ConnectionsTab componentId={componentId} />
+      <ConnectionsTab
+        componentId={componentId}
+        references={references}
+        onFocusElement={onFocusElement}
+      />
     </HandleHighlightProvider>
   );
 }
@@ -166,5 +186,37 @@ describe("ConnectionsTab highlight-all default", () => {
     render(<TabHarness componentId={nodeId} />);
 
     expect(screen.getByTestId("connections-select-all")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("lists a connection that reaches a reference under incoming, marked via the reference", () => {
+    const { authId, ordersId, refId } = seedThroughReference();
+    const onFocus = vi.fn();
+    render(
+      <TabHarness componentId={authId} references={{ canCreate: true }} onFocusElement={onFocus} />,
+    );
+    expect(screen.getByText("Orders")).toBeInTheDocument();
+    expect(screen.getByText("via reference 1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Go to Orders" }));
+    expect(onFocus).toHaveBeenCalledWith(ordersId);
+    fireEvent.click(screen.getByRole("button", { name: /Auth .* reference 1/ }));
+    expect(onFocus).toHaveBeenCalledWith(refId);
+  });
+
+  it("offers a new reference from the same tab, even with no connections", () => {
+    const { nodeId } = seedZeroConnections();
+    render(<TabHarness componentId={nodeId} references={{ canCreate: true }} />);
+    expect(screen.getByTestId("connections-references")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /New reference beside it/ }));
+    const components = Object.values(
+      useDiagramStore.getState().diagrams[useDiagramStore.getState().activeDiagramId!]!.snapshot
+        .components,
+    );
+    expect(components.some((component) => component.type === "shared-ref")).toBe(true);
+  });
+
+  it("shows no references section where references are not offered", () => {
+    const { nodeId } = seedTwoConnections();
+    render(<TabHarness componentId={nodeId} />);
+    expect(screen.queryByTestId("connections-references")).toBeNull();
   });
 });

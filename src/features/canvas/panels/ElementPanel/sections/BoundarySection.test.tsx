@@ -22,14 +22,13 @@ function seed() {
 
 function renderSections(
   current: () => PanelComponent,
-  props: { onSelect?: (id: string) => void; onToggle?: (id: string) => void } = {},
+  props: { onToggle?: (id: string) => void } = {},
 ) {
   const { updateComponent } = useDiagramStore.getState();
   render(
     <BoundarySections
       component={current()}
       updateComponent={updateComponent}
-      onSelectElement={props.onSelect}
       onTogglePanelCollapse={props.onToggle}
     />,
   );
@@ -82,12 +81,11 @@ describe("BoundarySections", () => {
     expect(current().panelColor).toBeUndefined();
   });
 
-  it("lists what the boundary holds; a click selects the child", () => {
-    const { current, app } = seed();
-    const onSelect = vi.fn();
-    renderSections(current, { onSelect });
-    fireEvent.click(screen.getByRole("button", { name: "Cart" }));
-    expect(onSelect).toHaveBeenCalledWith(app.id);
+  it("does not list what the boundary holds: the canvas shows it", () => {
+    const { current } = seed();
+    renderSections(current);
+    expect(screen.queryByText("Content")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cart" })).toBeNull();
   });
 
   it("the collapse switch runs the canvas's own toggle", () => {

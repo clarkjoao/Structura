@@ -34,7 +34,7 @@ const manifest: PluginManifest = {
   version: "1.1.0",
   author: "Structura Team",
   description: "Demonstrates toolbar button, toasts, and modal dialogs",
-  apiVersion: "^1.2",
+  apiVersion: "^1.18",
   capabilities: ["ui:panels", "ui:overlays", "diagram:read", "events:diagram", "storage"],
 };
 

@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FLOW_ACCENT_PRESETS } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
+import { builtinPacks } from "@/features/elements/packs/builtin-packs";
+import { packAccentCss } from "@/features/elements/packs/pack.accents";
 import { LIGHT_THEME_TOKENS, exportColorHex, flowExportColours } from "./flowExportColor";
 
 /** The `:root` (light) block of the app's stylesheet. */
@@ -9,7 +11,11 @@ function lightThemeBlock(): string {
   const css = readFileSync(path.resolve(__dirname, "../../../../index.css"), "utf8");
   const start = css.indexOf(":root");
   const end = css.indexOf(".dark", start);
-  return css.slice(start, end);
+  // Category accents moved from index.css into the element packs, injected at boot.
+  const packs = builtinPacks()
+    .map(({ pack }) => packAccentCss(pack))
+    .map((pc) => pc.slice(0, pc.indexOf(".dark")));
+  return [css.slice(start, end), ...packs].join("\n").replace(/^ {2}--/gm, "    --");
 }
 
 describe("LIGHT_THEME_TOKENS", () => {

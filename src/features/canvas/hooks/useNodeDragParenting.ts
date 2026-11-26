@@ -13,7 +13,6 @@ import {
   COMPONENT_TYPE_SHARED_REF,
 } from "@/features/diagram";
 import {
-  isOutsideParentBounds,
   isOutsideParentSize,
   findPanelContainingPoint,
   resolveAbsolutePosition,
@@ -116,6 +115,26 @@ function useAltHeldMarker(enabled: boolean): void {
       set(false);
     };
   }, [enabled]);
+}
+
+/**
+ * Whether `id` is nested (at any depth) inside `ancestorId`. A child never leaves its group by
+ * dragging — only an explicit ungroup takes it out — so the only container a drag can move it
+ * into is one nested in its current parent.
+ */
+function isNestedIn(
+  id: string,
+  ancestorId: string,
+  components: Record<string, { parentId?: string | null } | undefined>,
+): boolean {
+  let current = components[id]?.parentId ?? null;
+  const seen = new Set<string>();
+  while (current && !seen.has(current)) {
+    if (current === ancestorId) return true;
+    seen.add(current);
+    current = components[current]?.parentId ?? null;
+  }
+  return false;
 }
 
 /** Whether a measured size is the stored one, rounded by the DOM to whole pixels. */
@@ -360,7 +379,13 @@ export function useNodeDragParenting({
         absX + (size?.width ?? 0) / 2,
         absY + (size?.height ?? 0) / 2,
       );
-      const match = found && found.id !== comp.parentId ? found : undefined;
+      // A child can only move deeper inside its own group; leaving it is an explicit ungroup.
+      const match =
+        found &&
+        found.id !== comp.parentId &&
+        (!comp.parentId || isNestedIn(found.id, comp.parentId, r.components))
+          ? found
+          : undefined;
       // A container that refuses this node is not lit up as a target.
       const matchType = match ? r.components[match.id]?.type : undefined;
       const newTarget =
@@ -581,24 +606,7 @@ export function useNodeDragParenting({
             ? resolveAbsolutePositionFromNodeMap(node.id, nodeMap)
             : node.position;
 
-          if (node.parentId) {
-            const parentNode = nodeMap.get(node.parentId);
-
-            const childDims = getPanelDimensions(node);
-            const outside = parentNode
-              ? isOutsideParentBounds(node.position, parentNode, childDims)
-              : false;
-            if (outside) {
-              entries.push({
-                nodeId: node.id,
-                newParentId: null,
-                newPosition: { x: nodeAbsPos.x, y: nodeAbsPos.y },
-              });
-              continue;
-            }
-          }
-
-          const match = findPanelContainingPoint(
+          const found = findPanelContainingPoint(
             nodes,
             nodeAbsPos.x,
             nodeAbsPos.y,
@@ -607,6 +615,11 @@ export function useNodeDragParenting({
             components,
             notADropTarget,
           );
+          // A child stays in its group: only a container nested in its parent can take it.
+          const match =
+            found && (!node.parentId || isNestedIn(found.id, node.parentId, components))
+              ? found
+              : null;
 
           if (match && match.id !== node.parentId && acceptsDrop(match.id, node.id)) {
             const matchAbsPos = resolveAbsolutePosition(
@@ -646,24 +659,24 @@ export function useNodeDragParenting({
           width: draggedNode.measured?.width ?? 0,
           height: draggedNode.measured?.height ?? 0,
         };
-        // Into another container: the innermost one under the node's centre — a sibling panel,
-        // one nested in the current parent, or an ancestor once it left the parent — never the
-        // node itself or something it holds.
+        // Deeper into its own group: the innermost container under the node's centre that is
+        // nested in the current parent — never the node itself or something it holds. Leaving
+        // the group (to a sibling panel, an ancestor or the top level) is an explicit ungroup
+        // (Cmd/Ctrl+Shift+G or the toolbar), never a drag; the node keeps its parent.
+        const parentId = parent.id;
         const blocked = getDescendantIdsFromIndex(draggedNode.id, buildChildrenIndex(components));
         blocked.add(draggedNode.id);
         const target = findPanelContainingPoint(
-          nodes.filter((node) => !blocked.has(node.id)),
+          nodes.filter(
+            (node) => !blocked.has(node.id) && isNestedIn(node.id, parentId, components),
+          ),
           absX + draggedDims.width / 2,
           absY + draggedDims.height / 2,
           undefined,
           r.nodeLayouts,
           components,
         );
-        if (
-          target &&
-          target.id !== draggedNode.parentId &&
-          acceptsDrop(target.id, draggedNode.id)
-        ) {
+        if (target && target.id !== parentId && acceptsDrop(target.id, draggedNode.id)) {
           const targetAbsPos = resolveAbsolutePosition(
             target.id,
             target.position,
@@ -678,16 +691,11 @@ export function useNodeDragParenting({
           flush();
           return;
         }
-        const outside = isOutsideParentBounds(draggedNode.position, parent, draggedDims);
-        entries.push(
-          outside
-            ? { nodeId: draggedNode.id, newParentId: null, newPosition: { x: absX, y: absY } }
-            : {
-                nodeId: draggedNode.id,
-                newParentId: draggedNode.parentId ?? null,
-                newPosition: { x: draggedNode.position.x, y: draggedNode.position.y },
-              },
-        );
+        entries.push({
+          nodeId: draggedNode.id,
+          newParentId: parentId,
+          newPosition: { x: draggedNode.position.x, y: draggedNode.position.y },
+        });
         flush();
         return;
       }

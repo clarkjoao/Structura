@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, GitBranch } from "lucide-react";
+import { Copy, Route } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -165,7 +165,7 @@ const FlowRecorderPanel = ({
   return (
     <PanelColumn testId="flow-recorder-panel">
       <PanelHeader
-        icon={<GitBranch className="h-3.5 w-3.5" />}
+        icon={<Route className="h-3.5 w-3.5" />}
         typeLabel={t("flows.panelTitle")}
         name={flow.name}
         namePlaceholder={suggestedName ?? t("flowRecorder.namePlaceholder")}

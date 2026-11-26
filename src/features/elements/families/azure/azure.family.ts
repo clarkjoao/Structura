@@ -1,146 +1,49 @@
-import CardNode from "@/features/canvas/nodes/CardNode";
-import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import {
-  buildCardNodeData,
-  buildCardNodeStyle,
-} from "@/features/canvas/nodes/CardNode/buildCardNodeData";
-import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
-import { isAzureComponent } from "@/features/diagram/model/component.guards";
 import {
   cloudServiceIdWrite,
   resolveCloudServiceId,
 } from "@/features/diagram/model/cloud-service-id";
-import {
-  AZURE_CATEGORIES,
-  AZURE_SERVICE_MAP,
-  isAzureType,
-  type AzureCategoryId,
-} from "@/features/cloud/providers/azure/azure.catalog";
+import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import { azureIconResolver } from "@/features/cloud/providers/azure/azure.icon-resolver";
 import i18n from "@/infrastructure/i18n";
+import azurePackJson from "../../packs/azure/pack.json";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
-import type { CatalogConceptId } from "../../search/concepts";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
-
-function accentFor(categoryId: AzureCategoryId) {
-  return { kind: "token" as const, cssVar: `--${categoryId}` };
-}
-
-/** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
-const AZURE_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
-  servicebus: ["queue", "topic"],
-  storagequeue: ["queue"],
-  eventgrid: ["events", "event-bus"],
-  eventhubs: ["events", "stream"],
-  sqldatabase: ["database", "relational-db"],
-  cosmosdb: ["database", "nosql-db"],
-  storagetable: ["database", "nosql-db"],
-  datawarehouse: ["database", "warehouse"],
-  rediscache: ["cache"],
-  storageblob: ["object-storage"],
-  apimanagement: ["api-gateway"],
-  loadbalancer: ["load-balancer"],
-  appgateway: ["load-balancer"],
-  cdn: ["cdn"],
-  dns: ["dns"],
-  activedirectory: ["identity"],
-  mfa: ["identity"],
-  keyvault: ["secrets"],
-  functions: ["serverless"],
-  monitor: ["monitoring"],
-  appinsights: ["monitoring"],
-  logicapps: ["workflow"],
-};
+import type { PackAdapter } from "../../packs/pack.adapter";
+import { packKeys } from "../../packs/pack.i18n";
+import { familyFromPack } from "../../packs/pack.loader";
+import { parsePack } from "../../packs/pack.schema";
 
 /**
- * Microsoft Azure as a `CloudFamilyDefinition`.
- *
- * Symmetric to GCP (F4). Icons come from `azure-react-icons` (npm React
- * components) via the existing `IconResolver` — no sync SVG pack, so draw.io
- * export uses `passthrough` (F2 floor) rather than `kind: "image"`.
+ * Microsoft Azure: the data is the `azure` element pack (`packs/azure/pack.json`). Icons come
+ * from `azure-react-icons` (React components, not SVGs), so there is no data URI to embed and
+ * draw.io export is always passthrough (the F2 floor) rather than an image.
  */
-export const azureFamily: CloudFamilyDefinition = {
-  id: "azure",
-  labelKey: "canvasToolbar.azureServices",
-  paletteCategoryId: "azure",
-  primaryCategoryIds: [
-    "azure-compute",
-    "azure-database",
-    "azure-storage",
-    "azure-networking",
-    "azure-security",
-  ],
-  preferredServiceByConcept: { queue: "servicebus", "nosql-db": "cosmosdb" },
+export const azurePack = parsePack(azurePackJson, "built-in pack");
 
-  categories: AZURE_CATEGORIES.map((category) => ({
-    id: category.id,
-    labelKey: `elements.azure.categories.${category.id}.label`,
-    descriptionKey: `elements.azure.categories.${category.id}.description`,
-    accent: accentFor(category.id),
-  })),
-
-  services: AZURE_CATEGORIES.flatMap((category) =>
-    category.services.map((service) => ({
-      id: service.id,
-      name: service.name,
-      iconName: service.iconName,
-      categoryId: category.id,
-      ...(AZURE_SERVICE_CONCEPTS[service.id]
-        ? { concepts: AZURE_SERVICE_CONCEPTS[service.id] }
-        : {}),
-    })),
-  ),
-
+export const azurePackAdapter: PackAdapter = {
   icons: azureIconResolver,
-
-  card: {
-    component: CardNode,
-    handles: SPREAD_HANDLES,
-    buildData: buildCardNodeData,
-    buildStyle: buildCardNodeStyle,
-  },
-
-  export: {
-    toExportNode: (comp, base) => {
-      if (!isAzureComponent(comp)) {
-        throw new Error(`[elements] azure export received a ${comp.type} component.`);
-      }
-
-      const cloudService = resolveCloudServiceId(comp);
-      const service = cloudService ? AZURE_SERVICE_MAP.get(cloudService) : undefined;
-
-      // azure-react-icons are React components, not SVGs we can embed as a
-      // data URI in the same tick. Passthrough keeps the identity (F2 floor)
-      // instead of disguising the node as C4.
-      return {
-        ...base,
-        kind: "passthrough",
-        name: comp.name,
-        description: service?.name ?? comp.technology,
-        originType: comp.type,
-        originLabel: i18n.t("canvasToolbar.azureServices"),
-        // Same control point as domain writes — projects onto ExportNode only.
-        ...cloudServiceIdWrite(cloudService),
-      };
-    },
-  },
-
-  defaultSize: { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H },
-  patchableKeys: ["cloudServiceId", "technology", "customColor"],
-
+  typeIdOf: (typeId) => (isAzureType(typeId) ? typeId : undefined),
   attachService: (base, categoryId, serviceId) => {
     if (!isAzureType(categoryId)) {
       throw new Error(
         `[elements] azure attachService got categoryId "${categoryId}"; expected an azure-* id.`,
       );
     }
-    return {
-      ...base,
-      type: categoryId,
-      ...cloudServiceIdWrite(serviceId),
-    };
+    return { ...base, type: categoryId, ...cloudServiceIdWrite(serviceId) };
   },
+  toExportNode: (comp, base, { pack, service }) => ({
+    ...base,
+    kind: "passthrough",
+    name: comp.name,
+    description: service?.name ?? ("technology" in comp ? comp.technology : undefined),
+    originType: comp.type,
+    originLabel: i18n.t(packKeys.label(pack.id)),
+    // Same control point as domain writes — projects onto ExportNode only.
+    ...cloudServiceIdWrite(resolveCloudServiceId(comp)),
+  }),
 };
+
+export const azureFamily: CloudFamilyDefinition = familyFromPack(azurePack, azurePackAdapter);
 
 /** Descriptors produced by the family — one per Azure category. */
 export const azureElements = buildCloudFamilyDescriptors(azureFamily);

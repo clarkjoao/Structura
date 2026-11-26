@@ -92,7 +92,8 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
-    "defaultNamePrefix": "New"
+    "defaultNamePrefix": "New",
+    "selectPlaceholder": "Select…"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -326,7 +327,18 @@
     "localStorageQuota": "~5 MB",
     "action": {
       "clear": "Free up space",
-      "connectFolder": "Connect folder"
+      "connectFolder": "Connect folder",
+      "restoreFolder": "Restore access"
+    },
+    "savedToFolder": {
+      "title": "The browser is out of space",
+      "description": "Your work is still being saved to the {{folder}} folder. Only the backup copy in the browser stopped updating."
+    },
+    "restoreFolder": {
+      "description": "Browser storage is full and the {{folder}} folder lost its permission. Restore access to keep saving."
+    },
+    "folderFailing": {
+      "description": "Browser storage is full and the last write to the {{folder}} folder failed. It is being tried again; keep this tab open until it says saved."
     }
   },
   "filesystem": {
@@ -482,7 +494,10 @@
       "outline": "Border and fill",
       "markerStart": "Start cap",
       "markerEnd": "End cap"
-    }
+    },
+    "savedToFolder": "Saved to folder",
+    "folderSaveError": "Not saved to folder",
+    "folderSaveErrorHint": "The last write to the folder failed. It is tried again by itself in a few seconds."
   },
   "compareMode": {
     "added": "Added",
@@ -526,11 +541,6 @@
     "showingVersion": "The canvas shows the Version {{name}}",
     "panel": "Panel",
     "note": "Note",
-    "awsServices": "AWS services",
-    "gcpServices": "GCP services",
-    "azureServices": "Azure services",
-    "kubernetesServices": "Kubernetes",
-    "ossServices": "Open source",
     "levelContext": "Level 1",
     "levelContainer": "Level 2",
     "levelComponent": "Level 3",
@@ -1001,7 +1011,27 @@
     "invalidJson": "Invalid JSON — fix before saving",
     "schemaRef": "Schema / Reference",
     "schemaRefPlaceholder": "e.g. https://schema.org/...",
-    "jsonContent": "JSON Content"
+    "jsonContent": "JSON Content",
+    "invalidShort": "Invalid JSON",
+    "more": "+{{count}} more",
+    "valid": "Valid JSON",
+    "unsaved": "Valid, not applied yet",
+    "errorAt": "Invalid JSON at line {{line}}, column {{column}}",
+    "apply": "Apply",
+    "applyHint": "Apply (⌘/Ctrl+Enter)",
+    "discard": "Discard",
+    "kinds": {
+      "string": "text",
+      "number": "number",
+      "boolean": "yes/no",
+      "null": "empty",
+      "array_one": "list of {{count}}",
+      "array_other": "list of {{count}}",
+      "object_one": "{{count}} key",
+      "object_other": "{{count}} keys"
+    },
+    "emptyObject": "Empty object",
+    "emptyArray": "Empty list"
   },
   "nodeTypes": {
     "db-table": "Database table",
@@ -1052,222 +1082,6 @@
     },
     "component": {
       "description": "A module or component inside a container. Use at C4 component level."
-    },
-    "gcp": {
-      "categories": {
-        "gcp-compute": {
-          "label": "Compute",
-          "description": "GCP compute services (VMs, containers, serverless)."
-        },
-        "gcp-storage": {
-          "label": "Storage",
-          "description": "GCP storage services (object storage, disks)."
-        },
-        "gcp-database": {
-          "label": "Databases",
-          "description": "GCP managed databases (SQL, Spanner, BigQuery)."
-        },
-        "gcp-networking": {
-          "label": "Networking",
-          "description": "GCP networking and connectivity."
-        },
-        "gcp-security": {
-          "label": "Security",
-          "description": "GCP security and identity services."
-        },
-        "gcp-analytics": {
-          "label": "Analytics",
-          "description": "GCP data analytics and observability."
-        },
-        "gcp-ai": {
-          "label": "AI & Machine Learning",
-          "description": "GCP AI and machine-learning services."
-        },
-        "gcp-devtools": {
-          "label": "Developer Tools",
-          "description": "GCP developer and DevOps tooling."
-        },
-        "gcp-integration": {
-          "label": "Integration",
-          "description": "GCP integration and messaging services."
-        },
-        "gcp-management": {
-          "label": "Management",
-          "description": "GCP management and marketplace tools."
-        },
-        "gcp-media": {
-          "label": "Media",
-          "description": "GCP media services."
-        },
-        "gcp-general": {
-          "label": "General",
-          "description": "Other GCP services."
-        }
-      }
-    },
-    "azure": {
-      "categories": {
-        "azure-compute": {
-          "label": "Compute",
-          "description": "Azure compute services (VMs, App Service, Functions)."
-        },
-        "azure-storage": {
-          "label": "Storage",
-          "description": "Azure storage services (Blob, Files, Queues)."
-        },
-        "azure-database": {
-          "label": "Databases",
-          "description": "Azure managed databases (SQL, Cosmos DB, Redis)."
-        },
-        "azure-networking": {
-          "label": "Networking",
-          "description": "Azure networking and connectivity."
-        },
-        "azure-security": {
-          "label": "Security",
-          "description": "Azure security and identity services."
-        },
-        "azure-analytics": {
-          "label": "Analytics",
-          "description": "Azure data analytics services."
-        },
-        "azure-ai": {
-          "label": "AI & Machine Learning",
-          "description": "Azure AI and machine-learning services."
-        },
-        "azure-integration": {
-          "label": "Integration",
-          "description": "Azure integration and messaging services."
-        },
-        "azure-devtools": {
-          "label": "Developer Tools",
-          "description": "Azure developer and DevOps tooling."
-        },
-        "azure-iot": {
-          "label": "IoT",
-          "description": "Azure Internet of Things services."
-        },
-        "azure-management": {
-          "label": "Management",
-          "description": "Azure management and monitoring tools."
-        },
-        "azure-media": {
-          "label": "Media",
-          "description": "Azure media services."
-        },
-        "azure-general": {
-          "label": "General",
-          "description": "Other Azure services."
-        }
-      }
-    },
-    "aws": {
-      "categories": {
-        "aws-compute": {
-          "label": "Compute",
-          "description": "AWS compute services (EC2, Lambda, …)."
-        },
-        "aws-storage": {
-          "label": "Storage",
-          "description": "AWS storage services (S3, EBS, EFS, …)."
-        },
-        "aws-database": {
-          "label": "Databases",
-          "description": "AWS managed databases (RDS, DynamoDB, …)."
-        },
-        "aws-networking": {
-          "label": "Networking",
-          "description": "AWS networking and content delivery."
-        },
-        "aws-security": {
-          "label": "Security",
-          "description": "AWS security and identity services."
-        },
-        "aws-analytics": {
-          "label": "Analytics",
-          "description": "AWS data analytics services."
-        },
-        "aws-ml": {
-          "label": "Machine Learning",
-          "description": "AWS machine-learning and AI services."
-        },
-        "aws-integration": {
-          "label": "Application Integration",
-          "description": "AWS messaging and integration services."
-        },
-        "aws-management": {
-          "label": "Management",
-          "description": "AWS management and governance tools."
-        },
-        "aws-developer": {
-          "label": "Developer Tools",
-          "description": "AWS developer tools."
-        },
-        "aws-containers": {
-          "label": "Containers",
-          "description": "AWS container services (ECS, EKS, …)."
-        },
-        "aws-media": {
-          "label": "Media",
-          "description": "AWS media services."
-        },
-        "aws-migration": {
-          "label": "Migration",
-          "description": "AWS migration and transfer services."
-        },
-        "aws-iot": {
-          "label": "Internet of Things",
-          "description": "AWS IoT services."
-        },
-        "aws-end-user": {
-          "label": "End User Computing",
-          "description": "AWS end-user computing services."
-        },
-        "aws-general": {
-          "label": "General",
-          "description": "Other AWS services and groupings."
-        }
-      }
-    },
-    "k8s": {
-      "categories": {
-        "k8s-workloads": {
-          "label": "Workloads",
-          "description": "Kubernetes workloads (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod)."
-        },
-        "k8s-networking": {
-          "label": "Networking",
-          "description": "Kubernetes networking (Service, Ingress, NetworkPolicy)."
-        },
-        "k8s-storage": {
-          "label": "Storage",
-          "description": "Kubernetes storage (PersistentVolume, PVC, StorageClass)."
-        },
-        "k8s-config": {
-          "label": "Config",
-          "description": "Kubernetes configuration objects (ConfigMap, Secret)."
-        }
-      }
-    },
-    "oss": {
-      "categories": {
-        "oss-datastore": {
-          "label": "Datastore",
-          "description": "Open-source datastores (Redis, …)."
-        },
-        "oss-messaging": {
-          "label": "Messaging",
-          "description": "Open-source messaging and streaming (Apache Kafka, …)."
-        }
-      },
-      "services": {
-        "redis": {
-          "description": "In-memory key-value store used as a cache, session store or message broker."
-        },
-        "kafka": {
-          "description": "Distributed event-streaming platform for high-throughput durable topics."
-        }
-      }
     },
     "families": {
       "structural": {
@@ -2001,10 +1815,6 @@
     "sourceType": "Colour from the boundary type",
     "sourceCustom": "Custom colour",
     "backToDerived": "Back to derived",
-    "content": "Content",
-    "contentCount_one": "{{count}} element",
-    "contentCount_other": "{{count}} elements",
-    "empty": "Nothing inside yet",
     "collapseOnCanvas": "Collapse on canvas"
   },
   "legend": {
@@ -2149,12 +1959,15 @@
   },
   "connectionsTab": {
     "noneFound": "No connections found.",
-    "filterPlaceholder": "Filter by label...",
+    "filterPlaceholder": "Filter by name or protocol…",
     "noResultsFor": "No results for “{{query}}”.",
     "incoming": "Incoming",
     "outgoing": "Outgoing",
     "dragReorderHint": "Drag rows to reorder handles.",
-    "selectAll": "Select all"
+    "selectAll": "Highlight all",
+    "viaRef": "via reference {{index}}",
+    "goTo": "Go to {{name}}",
+    "drawnElsewhere": "Drawn elsewhere"
   },
   "technologyCombobox": {
     "searchPlaceholder": "Search or type...",
@@ -2352,13 +2165,19 @@
     "aria": "Unknown element: {{name}}",
     "defaultName": "Unknown element",
     "badge": "unknown",
-    "emptyHint": "No content available"
+    "emptyHint": "No content available",
+    "cannotDraw": "Structura can't draw this type."
   },
   "svgNode": {
     "aria": "SVG element: {{name}}",
     "defaultName": "SVG",
     "showBorder": "Show border",
-    "showBorderHint": "Card frame around the artwork. Off shows only the SVG."
+    "showBorderHint": "Card frame around the artwork. Off shows only the SVG.",
+    "size": "Original size {{width}} × {{height}}",
+    "replace": "Replace…",
+    "download": "Download",
+    "emptyHint": "No artwork yet. Choose an .svg file in the panel, or paste one onto the canvas.",
+    "choose": "Choose…"
   },
   "cardNode": {
     "drillAria": "Drill into element {{id}}",
@@ -2380,6 +2199,7 @@
   "flows": {
     "panelTitle": "Flows",
     "importFlow": "Import flow",
+    "importShort": "Import",
     "importDialog": {
       "directionApproximated": "Mermaid’s BT and RL directions are imported as top-to-bottom and left-to-right.",
       "directionKept": "Imported along this diagram’s direction; switch it in Arrange if you want the other one.",
@@ -3499,6 +3319,14 @@
     }
   },
   "shared": {
+    "menu": {
+      "trigger": "Refs",
+      "intro": "Draw this element again where it is used, instead of long edges across the diagram.",
+      "create": "New reference beside it",
+      "createHint": "Or Alt+drag the element to where it is used",
+      "refRow": "{{name}} — reference {{index}}",
+      "openTab": "References: make one, see who uses it"
+    },
     "chip": "shared",
     "uses_one": "{{count}} use",
     "uses_other": "{{count}} uses",
@@ -3506,12 +3334,6 @@
     "usedBy_other": "Used by {{count}}",
     "goToOriginal": "Go to the original",
     "focusOriginal": "Focus on the original element",
-    "mode": {
-      "label": "Shared",
-      "edges": "Edges",
-      "badge": "Badges",
-      "ref": "References"
-    },
     "showEdges_one": "Show the edge",
     "showEdges_other": "Show the {{count}} edges",
     "hideEdges_one": "Hide the edge",
@@ -3525,17 +3347,15 @@
     "refsRemoved_other": "{{name}} left with its {{count}} references"
   },
   "elementCatalog": {
+    "asNode": "{{name}} — node",
+    "asGroup": "{{name}} — group",
+    "groupSynonyms": "group|cluster|container|boundary",
     "groups": {
       "c4": "C4",
       "flowchart": "Flowchart",
       "canvas": "Canvas & structure",
       "services": "Services",
       "presets": "My presets",
-      "aws": "AWS",
-      "gcp": "GCP",
-      "azure": "Azure",
-      "k8s": "Kubernetes",
-      "oss": "Open source",
       "patterns": "Patterns"
     },
     "concepts": {
@@ -3903,5 +3723,19 @@
       "dock": "Dock beside the canvas",
       "undock": "Undock"
     }
+  },
+  "unknownElementPanel": {
+    "title": {
+      "content": "Content kept as it came",
+      "plugin": "From a plugin that is not installed",
+      "removed": "A type Structura no longer has"
+    },
+    "body": {
+      "content": "Structura doesn't read this content; it keeps it untouched, with the element's connections.",
+      "plugin": "The {{plugin}} plugin draws this element. Install it to see it again; until then the element and its connections stay as they are.",
+      "removed": "This element was saved with a type that no longer exists. Its name and connections are kept; replace it with another element when you can."
+    },
+    "content": "Content",
+    "copy": "Copy content"
   }
 }

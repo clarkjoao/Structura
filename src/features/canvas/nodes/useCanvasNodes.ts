@@ -27,6 +27,7 @@ import { projectNodes } from "../core/projectDiagram";
 import { projectLegendNode } from "../core/legendNode";
 import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
+import { useCanvasLockStore } from "../hooks/canvasLock.store";
 import { applyEditorNodeOverlays, versionGhostOverlay } from "./nodeOverlays";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
 import { getPendingNodeIds, getPendingRemovedNodeIds, useLLMStore } from "@/features/llm";
@@ -229,6 +230,7 @@ export function useCanvasNodes({
   );
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
+  const isCanvasLocked = useCanvasLockStore((state) => state.locked);
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingNodeIds = useMemo(() => getPendingNodeIds(pendingPreviews), [pendingPreviews]);
   const pendingRemovedIds = useMemo(
@@ -380,7 +382,8 @@ export function useCanvasNodes({
      * so a reading that only turned those off still let a node be dragged into
      * a new position — and saved it.
      */
-    const isReading = ctx.isPlaying;
+    // The Controls padlock holds every node the same way.
+    const isReading = ctx.isPlaying || isCanvasLocked;
     const flowModeActive = ctx.isPlaying || ctx.isRecording;
     // A kind that places its elements (ADR-0014) takes drag and resize away from every node.
     const kindPlaced = !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
@@ -513,5 +516,6 @@ export function useCanvasNodes({
     pendingRemovedIds,
     versionChanges,
     ghostView,
+    isCanvasLocked,
   ]);
 }

@@ -1,0 +1,1203 @@
+{
+  "id": "aws",
+  "typeIds": "verbatim",
+  "label": {
+    "en": "AWS services",
+    "pt-BR": "AWS Services"
+  },
+  "groupLabel": {
+    "en": "AWS",
+    "pt-BR": "AWS"
+  },
+  "primaryCategories": [
+    "aws-compute",
+    "aws-networking",
+    "aws-storage",
+    "aws-database",
+    "aws-security",
+    "aws-containers"
+  ],
+  "spotlightServices": [
+    "ec2",
+    "lambda",
+    "s3",
+    "rds",
+    "elb",
+    "ecs",
+    "eks",
+    "vpc",
+    "cloudfront",
+    "dynamodb",
+    "sqs",
+    "api-gateway"
+  ],
+  "preferredServiceByConcept": {
+    "queue": "sqs",
+    "identity": "cognito",
+    "secrets": "secrets-manager"
+  },
+  "categories": [
+    {
+      "id": "aws-compute",
+      "label": {
+        "en": "Compute",
+        "pt-BR": "Compute"
+      },
+      "description": {
+        "en": "AWS compute services (EC2, Lambda, …).",
+        "pt-BR": "Serviços de computação da AWS (EC2, Lambda, …)."
+      },
+      "accent": {
+        "light": "30 100% 50%",
+        "dark": "30 100% 50%"
+      }
+    },
+    {
+      "id": "aws-storage",
+      "label": {
+        "en": "Storage",
+        "pt-BR": "Storage"
+      },
+      "description": {
+        "en": "AWS storage services (S3, EBS, EFS, …).",
+        "pt-BR": "Serviços de armazenamento da AWS (S3, EBS, EFS, …)."
+      },
+      "accent": {
+        "light": "142 52% 40%",
+        "dark": "142 52% 45%"
+      }
+    },
+    {
+      "id": "aws-database",
+      "label": {
+        "en": "Databases",
+        "pt-BR": "Databases"
+      },
+      "vendorName": "Database",
+      "description": {
+        "en": "AWS managed databases (RDS, DynamoDB, …).",
+        "pt-BR": "Bancos gerenciados da AWS (RDS, DynamoDB, …)."
+      },
+      "accent": {
+        "light": "215 80% 50%",
+        "dark": "215 80% 55%"
+      }
+    },
+    {
+      "id": "aws-networking",
+      "label": {
+        "en": "Networking",
+        "pt-BR": "Networking"
+      },
+      "vendorName": "Networking & Content Delivery",
+      "description": {
+        "en": "AWS networking and content delivery.",
+        "pt-BR": "Rede e entrega de conteúdo da AWS."
+      },
+      "accent": {
+        "light": "280 60% 50%",
+        "dark": "280 60% 55%"
+      }
+    },
+    {
+      "id": "aws-security",
+      "label": {
+        "en": "Security",
+        "pt-BR": "Security"
+      },
+      "vendorName": "Security, Identity & Compliance",
+      "description": {
+        "en": "AWS security and identity services.",
+        "pt-BR": "Serviços de segurança e identidade da AWS."
+      },
+      "accent": {
+        "light": "0 72% 50%",
+        "dark": "0 72% 55%"
+      }
+    },
+    {
+      "id": "aws-analytics",
+      "label": {
+        "en": "Analytics",
+        "pt-BR": "Analytics"
+      },
+      "description": {
+        "en": "AWS data analytics services.",
+        "pt-BR": "Serviços de analítica de dados da AWS."
+      },
+      "accent": {
+        "light": "280 60% 50%",
+        "dark": "280 60% 55%"
+      }
+    },
+    {
+      "id": "aws-ml",
+      "label": {
+        "en": "Machine Learning",
+        "pt-BR": "Machine Learning"
+      },
+      "description": {
+        "en": "AWS machine-learning and AI services.",
+        "pt-BR": "Serviços de machine learning e IA da AWS."
+      },
+      "accent": {
+        "light": "170 60% 40%",
+        "dark": "170 60% 45%"
+      }
+    },
+    {
+      "id": "aws-integration",
+      "label": {
+        "en": "Application Integration",
+        "pt-BR": "Application Integration"
+      },
+      "description": {
+        "en": "AWS messaging and integration services.",
+        "pt-BR": "Serviços de mensageria e integração da AWS."
+      },
+      "accent": {
+        "light": "330 70% 50%",
+        "dark": "330 70% 55%"
+      }
+    },
+    {
+      "id": "aws-management",
+      "label": {
+        "en": "Management",
+        "pt-BR": "Management"
+      },
+      "vendorName": "Management & Governance",
+      "description": {
+        "en": "AWS management and governance tools.",
+        "pt-BR": "Ferramentas de gestão e governança da AWS."
+      },
+      "accent": {
+        "light": "330 70% 50%",
+        "dark": "330 70% 55%"
+      }
+    },
+    {
+      "id": "aws-developer",
+      "label": {
+        "en": "Developer Tools",
+        "pt-BR": "Developer Tools"
+      },
+      "description": {
+        "en": "AWS developer tools.",
+        "pt-BR": "Ferramentas de desenvolvimento da AWS."
+      },
+      "accent": {
+        "light": "215 80% 50%",
+        "dark": "215 80% 55%"
+      }
+    },
+    {
+      "id": "aws-containers",
+      "label": {
+        "en": "Containers",
+        "pt-BR": "Containers"
+      },
+      "description": {
+        "en": "AWS container services (ECS, EKS, …).",
+        "pt-BR": "Serviços de containers da AWS (ECS, EKS, …)."
+      },
+      "accent": {
+        "light": "30 100% 50%",
+        "dark": "30 100% 50%"
+      }
+    },
+    {
+      "id": "aws-media",
+      "label": {
+        "en": "Media",
+        "pt-BR": "Media"
+      },
+      "vendorName": "Media Services",
+      "description": {
+        "en": "AWS media services.",
+        "pt-BR": "Serviços de mídia da AWS."
+      },
+      "accent": {
+        "light": "30 80% 45%",
+        "dark": "30 80% 50%"
+      }
+    },
+    {
+      "id": "aws-migration",
+      "label": {
+        "en": "Migration",
+        "pt-BR": "Migration"
+      },
+      "vendorName": "Migration & Transfer",
+      "description": {
+        "en": "AWS migration and transfer services.",
+        "pt-BR": "Serviços de migração e transferência da AWS."
+      },
+      "accent": {
+        "light": "170 60% 40%",
+        "dark": "170 60% 45%"
+      }
+    },
+    {
+      "id": "aws-iot",
+      "label": {
+        "en": "Internet of Things",
+        "pt-BR": "Internet of Things"
+      },
+      "description": {
+        "en": "AWS IoT services.",
+        "pt-BR": "Serviços de IoT da AWS."
+      },
+      "accent": {
+        "light": "142 52% 40%",
+        "dark": "142 52% 45%"
+      }
+    },
+    {
+      "id": "aws-end-user",
+      "label": {
+        "en": "End User Computing",
+        "pt-BR": "End User Computing"
+      },
+      "description": {
+        "en": "AWS end-user computing services.",
+        "pt-BR": "Serviços de computação para usuário final da AWS."
+      },
+      "accent": {
+        "light": "215 80% 50%",
+        "dark": "215 80% 55%"
+      }
+    },
+    {
+      "id": "aws-general",
+      "label": {
+        "en": "General",
+        "pt-BR": "General"
+      },
+      "vendorName": "General / Infra",
+      "description": {
+        "en": "Other AWS services and groupings.",
+        "pt-BR": "Demais serviços e agrupamentos da AWS."
+      },
+      "accent": {
+        "light": "30 100% 50%",
+        "dark": "30 100% 50%"
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "ec2",
+      "name": "Amazon EC2",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAmazonEC2"
+    },
+    {
+      "id": "lambda",
+      "name": "AWS Lambda",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSLambda",
+      "concepts": ["serverless"]
+    },
+    {
+      "id": "ecs",
+      "name": "Amazon ECS",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAmazonElasticContainerService"
+    },
+    {
+      "id": "eks",
+      "name": "Amazon EKS",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAmazonElasticKubernetesService"
+    },
+    {
+      "id": "fargate",
+      "name": "AWS Fargate",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSFargate"
+    },
+    {
+      "id": "elastic-beanstalk",
+      "name": "AWS Elastic Beanstalk",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSElasticBeanstalk"
+    },
+    {
+      "id": "batch",
+      "name": "AWS Batch",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSBatch"
+    },
+    {
+      "id": "lightsail",
+      "name": "Amazon Lightsail",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAmazonLightsail"
+    },
+    {
+      "id": "app-runner",
+      "name": "AWS App Runner",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSAppRunner"
+    },
+    {
+      "id": "auto-scaling",
+      "name": "AWS Auto Scaling",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSAutoScaling"
+    },
+    {
+      "id": "compute-optimizer",
+      "name": "AWS Compute Optimizer",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAWSComputeOptimizer"
+    },
+    {
+      "id": "ec2-image-builder",
+      "name": "EC2 Image Builder",
+      "category": "aws-compute",
+      "icon": "ArchitectureServiceAmazonEC2ImageBuilder"
+    },
+    {
+      "id": "s3",
+      "name": "Amazon S3",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAmazonSimpleStorageService",
+      "concepts": ["object-storage"]
+    },
+    {
+      "id": "ebs",
+      "name": "Amazon EBS",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAmazonElasticBlockStore"
+    },
+    {
+      "id": "efs",
+      "name": "Amazon EFS",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAmazonElasticFileSystem"
+    },
+    {
+      "id": "s3-glacier",
+      "name": "Amazon S3 Glacier",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAmazonSimpleStorageServiceGlacier",
+      "concepts": ["object-storage"]
+    },
+    {
+      "id": "storage-gateway",
+      "name": "AWS Storage Gateway",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAWSStorageGateway"
+    },
+    {
+      "id": "fsx",
+      "name": "Amazon FSx",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAmazonFSx"
+    },
+    {
+      "id": "backup",
+      "name": "AWS Backup",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAWSBackup"
+    },
+    {
+      "id": "datasync",
+      "name": "AWS DataSync",
+      "category": "aws-storage",
+      "icon": "ArchitectureServiceAWSDataSync"
+    },
+    {
+      "id": "rds",
+      "name": "Amazon RDS",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonRDS",
+      "concepts": ["database", "relational-db"]
+    },
+    {
+      "id": "dynamodb",
+      "name": "Amazon DynamoDB",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonDynamoDB",
+      "concepts": ["database", "nosql-db"]
+    },
+    {
+      "id": "elasticache",
+      "name": "Amazon ElastiCache",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonElastiCache",
+      "concepts": ["cache"]
+    },
+    {
+      "id": "redshift",
+      "name": "Amazon Redshift",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonRedshift",
+      "concepts": ["database", "warehouse"]
+    },
+    {
+      "id": "aurora",
+      "name": "Amazon Aurora",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonAurora",
+      "concepts": ["database", "relational-db"]
+    },
+    {
+      "id": "neptune",
+      "name": "Amazon Neptune",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonNeptune",
+      "concepts": ["database"]
+    },
+    {
+      "id": "documentdb",
+      "name": "Amazon DocumentDB",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonDocumentDB",
+      "concepts": ["database", "nosql-db"]
+    },
+    {
+      "id": "keyspaces",
+      "name": "Amazon Keyspaces",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonKeyspaces",
+      "concepts": ["database", "nosql-db"]
+    },
+    {
+      "id": "timestream",
+      "name": "Amazon Timestream",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonTimestream",
+      "concepts": ["database"]
+    },
+    {
+      "id": "memorydb",
+      "name": "Amazon MemoryDB",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAmazonMemoryDBforRedis",
+      "concepts": ["cache", "database"]
+    },
+    {
+      "id": "dms",
+      "name": "AWS DMS",
+      "category": "aws-database",
+      "icon": "ArchitectureServiceAWSDatabaseMigrationService"
+    },
+    {
+      "id": "vpc",
+      "name": "Amazon VPC",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAmazonVirtualPrivateCloud"
+    },
+    {
+      "id": "cloudfront",
+      "name": "Amazon CloudFront",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAmazonCloudFront",
+      "concepts": ["cdn"]
+    },
+    {
+      "id": "route53",
+      "name": "Amazon Route 53",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAmazonRoute53",
+      "concepts": ["dns"]
+    },
+    {
+      "id": "api-gateway",
+      "name": "Amazon API Gateway",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAmazonAPIGateway",
+      "concepts": ["api-gateway"]
+    },
+    {
+      "id": "elb",
+      "name": "Elastic Load Balancing",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceElasticLoadBalancing",
+      "concepts": ["load-balancer"]
+    },
+    {
+      "id": "direct-connect",
+      "name": "AWS Direct Connect",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSDirectConnect"
+    },
+    {
+      "id": "transit-gateway",
+      "name": "AWS Transit Gateway",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSTransitGateway"
+    },
+    {
+      "id": "internet-gateway",
+      "name": "Internet Gateway",
+      "category": "aws-networking",
+      "icon": "ResourceAmazonVPCInternetGateway"
+    },
+    {
+      "id": "nat-gateway",
+      "name": "NAT Gateway",
+      "category": "aws-networking",
+      "icon": "ResourceAmazonVPCNATGateway"
+    },
+    {
+      "id": "elastic-ip",
+      "name": "Elastic IP Address",
+      "category": "aws-networking",
+      "icon": "ResourceAmazonEC2ElasticIPAddress"
+    },
+    {
+      "id": "global-accelerator",
+      "name": "AWS Global Accelerator",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSGlobalAccelerator"
+    },
+    {
+      "id": "app-mesh",
+      "name": "AWS App Mesh",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSAppMesh"
+    },
+    {
+      "id": "cloud-map",
+      "name": "AWS Cloud Map",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSCloudMap"
+    },
+    {
+      "id": "client-vpn",
+      "name": "AWS Client VPN",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSClientVPN"
+    },
+    {
+      "id": "cloud-wan",
+      "name": "AWS Cloud WAN",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSCloudWAN"
+    },
+    {
+      "id": "privatelink",
+      "name": "AWS PrivateLink",
+      "category": "aws-networking",
+      "icon": "ArchitectureServiceAWSPrivateLink"
+    },
+    {
+      "id": "iam",
+      "name": "AWS IAM",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSIdentityandAccessManagement",
+      "concepts": ["identity"]
+    },
+    {
+      "id": "cognito",
+      "name": "Amazon Cognito",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAmazonCognito",
+      "concepts": ["identity"]
+    },
+    {
+      "id": "guardduty",
+      "name": "Amazon GuardDuty",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAmazonGuardDuty"
+    },
+    {
+      "id": "inspector",
+      "name": "Amazon Inspector",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAmazonInspector"
+    },
+    {
+      "id": "macie",
+      "name": "Amazon Macie",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAmazonMacie"
+    },
+    {
+      "id": "waf",
+      "name": "AWS WAF",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSWAF"
+    },
+    {
+      "id": "shield",
+      "name": "AWS Shield",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSShield"
+    },
+    {
+      "id": "kms",
+      "name": "AWS KMS",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSKeyManagementService",
+      "concepts": ["secrets"]
+    },
+    {
+      "id": "secrets-manager",
+      "name": "AWS Secrets Manager",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSSecretsManager",
+      "concepts": ["secrets"]
+    },
+    {
+      "id": "acm",
+      "name": "AWS Certificate Manager",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSCertificateManager"
+    },
+    {
+      "id": "firewall-manager",
+      "name": "AWS Firewall Manager",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSFirewallManager"
+    },
+    {
+      "id": "security-hub",
+      "name": "AWS Security Hub",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSSecurityHub"
+    },
+    {
+      "id": "detective",
+      "name": "Amazon Detective",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAmazonDetective"
+    },
+    {
+      "id": "cloudhsm",
+      "name": "AWS CloudHSM",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSCloudHSM"
+    },
+    {
+      "id": "iam-identity-center",
+      "name": "IAM Identity Center",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSIAMIdentityCenter",
+      "concepts": ["identity"]
+    },
+    {
+      "id": "directory-service",
+      "name": "AWS Directory Service",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSDirectoryService"
+    },
+    {
+      "id": "audit-manager",
+      "name": "AWS Audit Manager",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSAuditManager"
+    },
+    {
+      "id": "artifact",
+      "name": "AWS Artifact",
+      "category": "aws-security",
+      "icon": "ArchitectureServiceAWSArtifact"
+    },
+    {
+      "id": "athena",
+      "name": "Amazon Athena",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAmazonAthena"
+    },
+    {
+      "id": "emr",
+      "name": "Amazon EMR",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAmazonEMR"
+    },
+    {
+      "id": "kinesis",
+      "name": "Amazon Kinesis",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAmazonKinesis",
+      "concepts": ["events", "stream"]
+    },
+    {
+      "id": "quicksight",
+      "name": "Amazon QuickSight",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAmazonQuickSight"
+    },
+    {
+      "id": "glue",
+      "name": "AWS Glue",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAWSGlue"
+    },
+    {
+      "id": "lake-formation",
+      "name": "AWS Lake Formation",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAWSLakeFormation"
+    },
+    {
+      "id": "opensearch",
+      "name": "Amazon OpenSearch",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAmazonOpenSearchService"
+    },
+    {
+      "id": "data-exchange",
+      "name": "AWS Data Exchange",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAWSDataExchange"
+    },
+    {
+      "id": "msk",
+      "name": "Amazon MSK",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAmazonManagedStreamingforApacheKafka",
+      "concepts": ["queue", "events", "stream"]
+    },
+    {
+      "id": "data-pipeline",
+      "name": "AWS Data Pipeline",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAWSDataPipeline"
+    },
+    {
+      "id": "clean-rooms",
+      "name": "AWS Clean Rooms",
+      "category": "aws-analytics",
+      "icon": "ArchitectureServiceAWSCleanRooms"
+    },
+    {
+      "id": "sagemaker",
+      "name": "Amazon SageMaker",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonSageMaker"
+    },
+    {
+      "id": "bedrock",
+      "name": "Amazon Bedrock",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonBedrock"
+    },
+    {
+      "id": "rekognition",
+      "name": "Amazon Rekognition",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonRekognition"
+    },
+    {
+      "id": "comprehend",
+      "name": "Amazon Comprehend",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonComprehend"
+    },
+    {
+      "id": "polly",
+      "name": "Amazon Polly",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonPolly"
+    },
+    {
+      "id": "transcribe",
+      "name": "Amazon Transcribe",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonTranscribe"
+    },
+    {
+      "id": "translate",
+      "name": "Amazon Translate",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonTranslate"
+    },
+    {
+      "id": "lex",
+      "name": "Amazon Lex",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonLex"
+    },
+    {
+      "id": "textract",
+      "name": "Amazon Textract",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonTextract"
+    },
+    {
+      "id": "personalize",
+      "name": "Amazon Personalize",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonPersonalize"
+    },
+    {
+      "id": "forecast",
+      "name": "Amazon Forecast",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonForecast"
+    },
+    {
+      "id": "kendra",
+      "name": "Amazon Kendra",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonKendra"
+    },
+    {
+      "id": "q",
+      "name": "Amazon Q",
+      "category": "aws-ml",
+      "icon": "ArchitectureServiceAmazonQ"
+    },
+    {
+      "id": "sqs",
+      "name": "Amazon SQS",
+      "category": "aws-integration",
+      "icon": "ArchitectureServiceAmazonSimpleQueueService",
+      "concepts": ["queue"]
+    },
+    {
+      "id": "sns",
+      "name": "Amazon SNS",
+      "category": "aws-integration",
+      "icon": "ArchitectureServiceAmazonSimpleNotificationService",
+      "concepts": ["events", "topic"]
+    },
+    {
+      "id": "eventbridge",
+      "name": "Amazon EventBridge",
+      "category": "aws-integration",
+      "icon": "ArchitectureServiceAmazonEventBridge",
+      "concepts": ["events", "event-bus"]
+    },
+    {
+      "id": "step-functions",
+      "name": "AWS Step Functions",
+      "category": "aws-integration",
+      "icon": "ArchitectureServiceAWSStepFunctions",
+      "concepts": ["workflow"]
+    },
+    {
+      "id": "appsync",
+      "name": "AWS AppSync",
+      "category": "aws-integration",
+      "icon": "ArchitectureServiceAWSAppSync"
+    },
+    {
+      "id": "mq",
+      "name": "Amazon MQ",
+      "category": "aws-integration",
+      "icon": "ArchitectureServiceAmazonMQ",
+      "concepts": ["queue"]
+    },
+    {
+      "id": "cloudwatch",
+      "name": "Amazon CloudWatch",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAmazonCloudWatch",
+      "concepts": ["monitoring"]
+    },
+    {
+      "id": "cloudformation",
+      "name": "AWS CloudFormation",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSCloudFormation"
+    },
+    {
+      "id": "cloudtrail",
+      "name": "AWS CloudTrail",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSCloudTrail"
+    },
+    {
+      "id": "systems-manager",
+      "name": "AWS Systems Manager",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSSystemsManager"
+    },
+    {
+      "id": "config",
+      "name": "AWS Config",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSConfig"
+    },
+    {
+      "id": "organizations",
+      "name": "AWS Organizations",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSOrganizations"
+    },
+    {
+      "id": "control-tower",
+      "name": "AWS Control Tower",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSControlTower"
+    },
+    {
+      "id": "trusted-advisor",
+      "name": "AWS Trusted Advisor",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSTrustedAdvisor"
+    },
+    {
+      "id": "service-catalog",
+      "name": "AWS Service Catalog",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSServiceCatalog"
+    },
+    {
+      "id": "health-dashboard",
+      "name": "AWS Health Dashboard",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSHealthDashboard"
+    },
+    {
+      "id": "cost-explorer",
+      "name": "AWS Cost Explorer",
+      "category": "aws-management",
+      "icon": "ArchitectureServiceAWSCostExplorer"
+    },
+    {
+      "id": "codebuild",
+      "name": "AWS CodeBuild",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCodeBuild"
+    },
+    {
+      "id": "codepipeline",
+      "name": "AWS CodePipeline",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCodePipeline"
+    },
+    {
+      "id": "codedeploy",
+      "name": "AWS CodeDeploy",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCodeDeploy"
+    },
+    {
+      "id": "codecommit",
+      "name": "AWS CodeCommit",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCodeCommit"
+    },
+    {
+      "id": "codeartifact",
+      "name": "AWS CodeArtifact",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCodeArtifact"
+    },
+    {
+      "id": "cloud9",
+      "name": "AWS Cloud9",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCloud9"
+    },
+    {
+      "id": "xray",
+      "name": "AWS X-Ray",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSXRay",
+      "concepts": ["monitoring"]
+    },
+    {
+      "id": "cdk",
+      "name": "AWS CDK",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCloudDevelopmentKit"
+    },
+    {
+      "id": "cli",
+      "name": "AWS CLI",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSCommandLineInterface"
+    },
+    {
+      "id": "amplify",
+      "name": "AWS Amplify",
+      "category": "aws-developer",
+      "icon": "ArchitectureServiceAWSAmplify"
+    },
+    {
+      "id": "ecr",
+      "name": "Amazon ECR",
+      "category": "aws-containers",
+      "icon": "ArchitectureServiceAmazonElasticContainerRegistry"
+    },
+    {
+      "id": "ecs-2",
+      "name": "Amazon ECS",
+      "category": "aws-containers",
+      "icon": "ArchitectureServiceAmazonElasticContainerService"
+    },
+    {
+      "id": "eks-2",
+      "name": "Amazon EKS",
+      "category": "aws-containers",
+      "icon": "ArchitectureServiceAmazonElasticKubernetesService"
+    },
+    {
+      "id": "fargate-2",
+      "name": "AWS Fargate",
+      "category": "aws-containers",
+      "icon": "ArchitectureServiceAWSFargate"
+    },
+    {
+      "id": "media-convert",
+      "name": "AWS Elemental MediaConvert",
+      "category": "aws-media",
+      "icon": "ArchitectureServiceAWSElementalMediaConvert"
+    },
+    {
+      "id": "media-live",
+      "name": "AWS Elemental MediaLive",
+      "category": "aws-media",
+      "icon": "ArchitectureServiceAWSElementalMediaLive"
+    },
+    {
+      "id": "media-package",
+      "name": "AWS Elemental MediaPackage",
+      "category": "aws-media",
+      "icon": "ArchitectureServiceAWSElementalMediaPackage"
+    },
+    {
+      "id": "media-store",
+      "name": "AWS Elemental MediaStore",
+      "category": "aws-media",
+      "icon": "ArchitectureServiceAWSElementalMediaStore"
+    },
+    {
+      "id": "media-connect",
+      "name": "AWS Elemental MediaConnect",
+      "category": "aws-media",
+      "icon": "ArchitectureServiceAWSElementalMediaConnect"
+    },
+    {
+      "id": "ivs",
+      "name": "Amazon IVS",
+      "category": "aws-media",
+      "icon": "ArchitectureServiceAmazonInteractiveVideoService"
+    },
+    {
+      "id": "migration-hub",
+      "name": "AWS Migration Hub",
+      "category": "aws-migration",
+      "icon": "ArchitectureServiceAWSMigrationHub"
+    },
+    {
+      "id": "app-migration",
+      "name": "AWS Application Migration",
+      "category": "aws-migration",
+      "icon": "ArchitectureServiceAWSApplicationMigrationService"
+    },
+    {
+      "id": "app-discovery",
+      "name": "AWS Application Discovery",
+      "category": "aws-migration",
+      "icon": "ArchitectureServiceAWSApplicationDiscoveryService"
+    },
+    {
+      "id": "transfer-family",
+      "name": "AWS Transfer Family",
+      "category": "aws-migration",
+      "icon": "ArchitectureServiceAWSTransferFamily"
+    },
+    {
+      "id": "snowball",
+      "name": "AWS Snow Family",
+      "category": "aws-migration",
+      "icon": "ArchitectureServiceAWSSnowFamily"
+    },
+    {
+      "id": "iot-core",
+      "name": "AWS IoT Core",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTCore"
+    },
+    {
+      "id": "iot-greengrass",
+      "name": "AWS IoT Greengrass",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTGreengrass"
+    },
+    {
+      "id": "iot-analytics",
+      "name": "AWS IoT Analytics",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTAnalytics"
+    },
+    {
+      "id": "iot-events",
+      "name": "AWS IoT Events",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTEvents"
+    },
+    {
+      "id": "iot-sitewise",
+      "name": "AWS IoT SiteWise",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTSiteWise"
+    },
+    {
+      "id": "iot-twinmaker",
+      "name": "AWS IoT TwinMaker",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTTwinMaker"
+    },
+    {
+      "id": "iot-device-mgmt",
+      "name": "AWS IoT Device Mgmt",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTDeviceManagement"
+    },
+    {
+      "id": "iot-fleetwise",
+      "name": "AWS IoT FleetWise",
+      "category": "aws-iot",
+      "icon": "ArchitectureServiceAWSIoTFleetWise"
+    },
+    {
+      "id": "workspaces",
+      "name": "Amazon WorkSpaces",
+      "category": "aws-end-user",
+      "icon": "ArchitectureServiceAmazonWorkSpaces"
+    },
+    {
+      "id": "appstream",
+      "name": "Amazon AppStream 2.0",
+      "category": "aws-end-user",
+      "icon": "ArchitectureServiceAmazonAppStream"
+    },
+    {
+      "id": "aws-cloud",
+      "name": "AWS Cloud",
+      "category": "aws-general",
+      "icon": "ArchitectureGroupAWSCloud"
+    },
+    {
+      "id": "aws-region",
+      "name": "AWS Region",
+      "category": "aws-general",
+      "icon": "ArchitectureGroupRegion"
+    },
+    {
+      "id": "aws-vpc-group",
+      "name": "VPC",
+      "category": "aws-general",
+      "icon": "ArchitectureGroupVirtualprivatecloudVPC"
+    },
+    {
+      "id": "aws-account",
+      "name": "AWS Account",
+      "category": "aws-general",
+      "icon": "ArchitectureGroupAWSAccount"
+    },
+    {
+      "id": "private-subnet",
+      "name": "Private Subnet",
+      "category": "aws-general",
+      "icon": "ArchitectureGroupPrivatesubnet"
+    },
+    {
+      "id": "public-subnet",
+      "name": "Public Subnet",
+      "category": "aws-general",
+      "icon": "ArchitectureGroupPublicsubnet"
+    }
+  ]
+}

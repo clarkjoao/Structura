@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import {
   catalogGroupCounts,
+  PRIMARY_GROUP_IDS,
   searchCatalog,
   type CatalogEntry,
   type CatalogGroup,
@@ -31,6 +32,12 @@ import {
 } from "./catalogViewModel";
 import { Kbd } from "./Kbd";
 import { useCanvasCatalogIndex } from "./useCanvasCatalogIndex";
+
+const PRIMARY_GROUPS: ReadonlySet<string> = new Set(PRIMARY_GROUP_IDS);
+
+function isPrimaryGroup(groupId: string): boolean {
+  return PRIMARY_GROUPS.has(groupId);
+}
 
 export interface ElementCatalogProps {
   /** Insert at the viewport center. `keepOpen` is ⇧↵. */
@@ -350,26 +357,41 @@ export function ElementCatalog({ onInsert, onInsertPattern }: ElementCatalogProp
           { id: ALL_GROUPS, label: t("elementCatalog.all"), count: chips.all },
           ...chips.groups.map(({ group, count }) => ({ ...group, count })),
           { id: PATTERNS_CHIP, label: t("elementCatalog.groups.patterns"), count: patternCount },
-        ].map((chip) => {
+        ].map((chip, position, all) => {
           const pressed = chip.id === activeGroup;
+          // "All" and the primary groups (C4, AWS, canvas) lead and read stronger; a divider
+          // sets them apart from the rest.
+          const primary = chip.id === ALL_GROUPS || isPrimaryGroup(chip.id);
+          const previous = all[position - 1];
+          const startsSecondary =
+            !primary &&
+            previous !== undefined &&
+            (previous.id === ALL_GROUPS || isPrimaryGroup(previous.id));
           return (
-            <button
-              key={chip.id}
-              type="button"
-              tabIndex={-1}
-              aria-pressed={pressed}
-              onMouseDown={keepInputFocus}
-              onClick={() => selectGroup(chip.id)}
-              className={cn(
-                "flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors",
-                pressed
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+            <Fragment key={chip.id}>
+              {startsSecondary && (
+                <span aria-hidden className="mx-0.5 h-5 w-px shrink-0 self-center bg-border" />
               )}
-            >
-              {chip.label}
-              <span className="font-mono text-[10px] text-muted-foreground">{chip.count}</span>
-            </button>
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-pressed={pressed}
+                onMouseDown={keepInputFocus}
+                onClick={() => selectGroup(chip.id)}
+                className={cn(
+                  "flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors",
+                  primary && "font-medium",
+                  pressed
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : primary
+                      ? "border-border bg-muted/50 text-foreground hover:bg-surface-hover"
+                      : "border-border text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+                )}
+              >
+                {chip.label}
+                <span className="font-mono text-[10px] text-muted-foreground">{chip.count}</span>
+              </button>
+            </Fragment>
           );
         })}
       </div>

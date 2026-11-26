@@ -33,13 +33,13 @@ import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerMo
 import { OpacityControl } from "./OpacityControl";
 import { OutlineControl } from "./OutlineControl";
 import { buildOutlineSections } from "./outlineSections";
-import { CreateRefButton, SharedModeControl } from "./SharedModeControl";
+import { RefsButton } from "./RefsButton";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
-import { canBeReferenced } from "@/features/elements/referencing";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 import { FloatingSelectionToolbar } from "./FloatingSelectionToolbar";
 import { KindQuickActions } from "./KindQuickActions";
 import { useKindAllowsReferences } from "../hooks/useKindAllowsReferences";
+import { supportsCustomIcon } from "../nodes/customIconSupport";
 
 interface NodeQuickActionsBarProps {
   nodeId: string;
@@ -286,8 +286,7 @@ export function NodeQuickActionsBar({
   const isCollapsible = getElement(component.type)?.canvas.collapsible === true;
   const isCollapsed = (component as { collapsed?: boolean }).collapsed === true;
   const isRef = isSharedRefComponent(component);
-  // A reference draws the link glyph, never an icon of its own.
-  const hasIcon = "customIconId" in component && !isRef;
+  const hasIcon = supportsCustomIcon(component);
   // Show color picker only for components that support color
   const hasColor = supportsColor(component);
   const outlineSections = buildOutlineSections(component, defaultAccent, updateComponent, t);
@@ -346,15 +345,11 @@ export function NodeQuickActionsBar({
             </button>
           )}
 
-          {/* How the edges into it are drawn when many things use it */}
-          {referencesAllowed && !isSharedRefComponent(component) && (
-            <SharedModeControl
-              component={component}
-              onChange={(patch) => updateComponent(nodeId, patch)}
-            />
-          )}
-          {referencesAllowed && canBeReferenced(component) && (
-            <CreateRefButton original={component} />
+          {/* References: opens the inspector's References tab */}
+          {referencesAllowed && !isRef && (
+            <div className="mx-1 border-l border-border pl-1">
+              <RefsButton component={component} />
+            </div>
           )}
 
           {/* Compact / expanded — only for collapsible typed containers */}

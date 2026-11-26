@@ -1,0 +1,44 @@
+{
+  "id": "observability",
+  "label": { "en": "Observability", "pt-BR": "Observabilidade" },
+  "primaryCategories": ["metrics"],
+  "categories": [
+    {
+      "id": "metrics",
+      "label": { "en": "Metrics", "pt-BR": "Métricas" },
+      "description": {
+        "en": "Metric stores and dashboards.",
+        "pt-BR": "Bases de métricas e painéis."
+      },
+      "accent": { "light": "#e6522c", "dark": "16 80% 60%" }
+    },
+    {
+      "id": "tracing",
+      "label": { "en": "Tracing", "pt-BR": "Rastreamento" },
+      "description": { "en": "Distributed tracing.", "pt-BR": "Rastreamento distribuído." },
+      "accent": { "light": "200 70% 45%" }
+    }
+  ],
+  "services": [
+    {
+      "id": "prometheus",
+      "name": "Prometheus",
+      "category": "metrics",
+      "icon": "prometheus",
+      "concepts": ["monitoring"],
+      "description": {
+        "en": "Pull-based metrics database.",
+        "pt-BR": "Base de métricas por coleta."
+      }
+    },
+    { "id": "grafana", "name": "Grafana", "category": "metrics", "icon": "grafana" }
+  ],
+  "shapes": [
+    {
+      "id": "funnel",
+      "label": { "en": "Funnel", "pt-BR": "Funil" },
+      "viewBox": "0 0 100 60",
+      "paths": ["M4 4 H96 L60 40 V56 H40 V40 Z"]
+    }
+  ]
+}

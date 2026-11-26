@@ -1,3 +1,4 @@
+import { builtinPacks } from "./packs/builtin-packs";
 import { describe, expect, it } from "vitest";
 import { NODE_TYPE_REGISTRY } from "@/features/canvas/nodes/node-types/registry";
 import { buildComponentForType } from "@/features/diagram/store/slices/components.slice";
@@ -143,12 +144,15 @@ describe("what the legacy render registry still owns", () => {
     expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual([]);
   });
 
-  it("covers fixed ids plus every registered cloud family category", () => {
+  it("covers fixed ids plus every registered cloud family category and pack shape", () => {
     const cloudCategoryCount = allCloudFamilies().reduce(
       (n, family) => n + family.categories.length,
       0,
     );
-    expect(registeredIds.length).toBe(FIXED_REGISTERED_IDS.length + cloudCategoryCount);
+    const packShapeCount = builtinPacks().reduce((n, { pack }) => n + pack.shapes.length, 0);
+    expect(registeredIds.length).toBe(
+      FIXED_REGISTERED_IDS.length + cloudCategoryCount + packShapeCount,
+    );
   });
 });
 

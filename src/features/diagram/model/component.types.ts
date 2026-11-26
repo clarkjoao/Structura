@@ -515,6 +515,14 @@ export interface PluginTypedComponent extends BaseComponent {
 
   /** Opaque plugin-owned data; preserved verbatim while the owning plugin is absent. */
   pluginData?: Record<string, unknown>;
+
+  /**
+   * Element-pack cards (`<packId>/<category>`) carry a catalog service like the cloud families.
+   * Written only through `cloudServiceIdWrite()`; read through `resolveCloudServiceId`.
+   */
+  cloudServiceId?: string;
+  technology?: string;
+  customColor?: string;
 }
 
 export type Component =

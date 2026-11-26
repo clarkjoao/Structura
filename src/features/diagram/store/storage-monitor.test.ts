@@ -46,6 +46,14 @@ describe("storage health thresholds", () => {
     state._setStorageUsage(1 * GB, 10 * GB);
     expect(useSaveStatusStore.getState().storageHealthLevel).toBe("ok");
   });
+
+  it("a save that goes through ends critical, back to what the last measurement says", () => {
+    const state = useSaveStatusStore.getState();
+    state._setStorageUsage(9 * GB, 10 * GB);
+    state._setStorageCritical();
+    state._setSaved();
+    expect(useSaveStatusStore.getState().storageHealthLevel).toBe("warning");
+  });
 });
 
 describe("checkStorageHealth", () => {

@@ -12,6 +12,7 @@ import {
 } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
+import { reportFolderWrite } from "./folderSyncStatus.store";
 import { workspaceStorage } from "./workspaceStorage";
 import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
@@ -112,6 +113,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     if (!staged) {
       // Rollback any diagrams that were already written to .tmp
       await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
+      reportFolderWrite(false);
       return false;
     }
     stagedWrites.push(staged);
@@ -137,6 +139,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   if (!manifestOk) {
     // Rollback: delete .tmp files since manifest failed
     await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
+    reportFolderWrite(false);
     return false;
   }
 
@@ -161,6 +164,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   });
 
   recordFolderSyncSuccess();
+  reportFolderWrite(true);
 
   return true;
 }
@@ -377,6 +381,9 @@ export async function syncFoldersFromFilesystem(): Promise<FolderSyncResult | nu
 let _syncUnsub: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _flushChain: Promise<void> = Promise.resolve();
+/** A failed folder write is tried again after this long, even if nothing else changes. */
+const FOLDER_RETRY_MS = 15_000;
+let _retryTimer: ReturnType<typeof setTimeout> | null = null;
 let lastFlushedDiagrams: Record<string, Diagram> = {};
 /** Path segments captured at the last flush, keyed by diagramId. Used to detect moves. */
 let lastFlushedPathSegments: Record<string, string[]> = {};
@@ -426,6 +433,16 @@ export function startFileSystemSync(): void {
   // every flush re-walked folders), which surfaced as React Flow's
   // `StoreUpdater` repeatedly calling `setNodes` until React aborted with
   // "Maximum update depth exceeded".
+
+  /** The write failed: say so, and try again soon — the next edit may be a long way off. */
+  const failedWrite = (): void => {
+    reportFolderWrite(false);
+    if (_retryTimer) return;
+    _retryTimer = setTimeout(() => {
+      _retryTimer = null;
+      runDebouncedFlush();
+    }, FOLDER_RETRY_MS);
+  };
 
   /**
    * Debounced folder sync runs in parallel with Zustand persist (PERSIST_DEBOUNCE_MS in
@@ -517,6 +534,7 @@ export function startFileSystemSync(): void {
               // Rollback any diagrams that were already written to .tmp
               await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
               toast.error(i18n.t("filesystem.diagramWriteFailed", { count: 1 }) as string);
+              failedWrite();
               return;
             }
             stagedWrites.push(staged);
@@ -553,16 +571,18 @@ export function startFileSystemSync(): void {
             if (manifestOk) {
               // Commit: rename .tmp → .json
               const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
-              if (!commitOk) {
-                // Partial commit is intentional — already-renamed finals are kept;
-                // see flushWorkspaceToConnectedFolder / commitStagedDiagrams docs.
-                console.warn("[FileSystemBoot] Partial commit - some diagrams may need retry");
-              }
-
               lastSyncedManifestFingerprint = manifestFp;
-              wroteSomething = true;
               // Notify other tabs that the manifest changed so they can re-check for conflicts.
               broadcastManifestChanged(fileSystemAdapter.folderName ?? "");
+              if (!commitOk) {
+                // Partial commit is intentional — already-renamed finals are kept;
+                // see flushWorkspaceToConnectedFolder / commitStagedDiagrams docs. The
+                // diagrams are not marked flushed, so the retry writes them again.
+                console.warn("[FileSystemBoot] Partial commit - some diagrams may need retry");
+                failedWrite();
+                return;
+              }
+              wroteSomething = true;
             } else {
               // Rollback: delete .tmp files since manifest failed
               await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
@@ -570,6 +590,10 @@ export function startFileSystemSync(): void {
                 "[FileSystemBoot] Manifest write failed after retry — staged diagrams rolled back.",
               );
               toast.error(i18n.t("filesystem.manifestWriteFailed") as string);
+              // Rolled back: these changes are not on disk, so they must not be marked flushed
+              // (they used to be, and the next flush skipped them).
+              failedWrite();
+              return;
             }
           } else {
             // No manifest change needed, but we still need to commit the staged files
@@ -578,14 +602,16 @@ export function startFileSystemSync(): void {
               const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
               if (!commitOk) {
                 console.warn("[FileSystemBoot] Commit failed for path changes");
-              } else {
-                wroteSomething = true;
+                failedWrite();
+                return;
               }
+              wroteSomething = true;
             }
           }
 
           if (wroteSomething) {
             recordFolderSyncSuccess();
+            reportFolderWrite(true);
           }
 
           lastFlushedDiagrams = { ...diagramState.diagrams };
@@ -596,8 +622,9 @@ export function startFileSystemSync(): void {
         })
         .catch(async (error: unknown) => {
           console.error("[FileSystemSync] write failed:", error);
-          // Re-query permission so the UI callback fires if the OS revoked access.
-          await fileSystemAdapter.checkPermission();
+          // Re-query permission so the UI callback fires if the OS revoked access; a write that
+          // failed with the permission intact is reported and retried.
+          if (await fileSystemAdapter.checkPermission()) failedWrite();
         });
     }, VIEWPORT_DEBOUNCE_MS);
   };
@@ -631,6 +658,10 @@ export function stopFileSystemSync(): void {
   if (_syncTimer) {
     clearTimeout(_syncTimer);
     _syncTimer = null;
+  }
+  if (_retryTimer) {
+    clearTimeout(_retryTimer);
+    _retryTimer = null;
   }
   lastSyncedManifestFingerprint = "";
   lastFlushedPathSegments = {};

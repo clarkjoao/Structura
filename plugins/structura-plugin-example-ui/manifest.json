@@ -4,6 +4,6 @@
   "version": "1.0.0",
   "author": "Structura Team",
   "description": "Demonstrates toolbar button, toasts, and modal dialogs",
-  "apiVersion": "^1.1",
+  "apiVersion": "^1.18",
   "capabilities": ["ui:panels", "ui:overlays", "diagram:read"]
 }

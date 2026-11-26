@@ -1,0 +1,69 @@
+{
+  "id": "oss",
+  "typeIds": "verbatim",
+  "label": {
+    "en": "Open source",
+    "pt-BR": "Open source"
+  },
+  "groupLabel": {
+    "en": "Open source",
+    "pt-BR": "Open source"
+  },
+  "primaryCategories": ["oss-datastore", "oss-messaging"],
+  "categories": [
+    {
+      "id": "oss-datastore",
+      "label": {
+        "en": "Datastore",
+        "pt-BR": "Datastore"
+      },
+      "description": {
+        "en": "Open-source datastores (Redis, …).",
+        "pt-BR": "Datastores open source (Redis, …)."
+      },
+      "accent": {
+        "light": "0 72% 48%",
+        "dark": "0 72% 55%"
+      }
+    },
+    {
+      "id": "oss-messaging",
+      "label": {
+        "en": "Messaging",
+        "pt-BR": "Messaging"
+      },
+      "description": {
+        "en": "Open-source messaging and streaming (Apache Kafka, …).",
+        "pt-BR": "Mensageria e streaming open source (Apache Kafka, …)."
+      },
+      "accent": {
+        "light": "220 70% 42%",
+        "dark": "220 70% 50%"
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "redis",
+      "name": "Redis",
+      "category": "oss-datastore",
+      "icon": "redis",
+      "description": {
+        "en": "In-memory key-value store used as a cache, session store or message broker.",
+        "pt-BR": "Armazenamento chave-valor em memória usado como cache, sessão ou broker de mensagens."
+      },
+      "concepts": ["cache", "database"]
+    },
+    {
+      "id": "kafka",
+      "name": "Apache Kafka",
+      "category": "oss-messaging",
+      "icon": "kafka",
+      "description": {
+        "en": "Distributed event-streaming platform for high-throughput durable topics.",
+        "pt-BR": "Plataforma distribuída de streaming de eventos para tópicos duráveis de alta vazão."
+      },
+      "concepts": ["queue", "events", "stream"]
+    }
+  ]
+}

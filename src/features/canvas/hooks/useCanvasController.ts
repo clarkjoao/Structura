@@ -18,6 +18,7 @@ import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
+import { useCanvasLockStore } from "./canvasLock.store";
 import { useCanvasArrange } from "./useCanvasArrange";
 import { useCollabSelectionBroadcast } from "./useCollabSelectionBroadcast";
 import { useElementPanelGate } from "./useElementPanelGate";
@@ -126,7 +127,13 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     updateNodeInternals,
     t,
   });
-  const interactionMode = useInteractionMode(diagram);
+  const baseInteractionMode = useInteractionMode(diagram);
+  const isCanvasLocked = useCanvasLockStore((state) => state.locked);
+  // The Controls padlock: a locked canvas is edited nowhere, as in compare mode.
+  const interactionMode = useMemo(
+    () => (isCanvasLocked ? { ...baseInteractionMode, canEditCanvas: false } : baseInteractionMode),
+    [baseInteractionMode, isCanvasLocked],
+  );
 
   const { selectedNodes, selectedCount, showElementPanel } = useElementPanelGate({
     nodes: graphState.nodes,
@@ -147,6 +154,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     onNodeDragStop: interaction.onNodeDragStop,
     eventHandlers: interaction.eventHandlers,
     interactionMode,
+    isCanvasLocked,
     isRecording: flowState.isRecording,
     actions,
     showSearch: interaction.showSearch,

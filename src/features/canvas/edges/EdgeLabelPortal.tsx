@@ -97,7 +97,7 @@ export function EdgeLabelPortalHost() {
 }
 
 /** Below this zoom, edge labels hide unless their edge is revealed. */
-export const EDGE_LABEL_MIN_ZOOM = 0.6;
+export const EDGE_LABEL_MIN_ZOOM = 0.35;
 
 /**
  * Edge labels live inside the zoomed viewport, so left alone they shrink with

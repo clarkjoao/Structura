@@ -76,7 +76,19 @@ export function subscribeElements(listener: () => void): () => void {
   };
 }
 
+let version = 0;
+
+/**
+ * Bumped on every registration or removal: a snapshot for `useSyncExternalStore`, so a surface
+ * that memoises what the registry offers (the element catalog) rebuilds when a plugin adds a
+ * pack while it is open.
+ */
+export function elementsVersion(): number {
+  return version;
+}
+
 function notifyElementsChanged(): void {
+  version += 1;
   for (const listener of listeners) listener();
 }
 

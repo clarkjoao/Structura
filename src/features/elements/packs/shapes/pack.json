@@ -1,0 +1,80 @@
+{
+  "id": "shapes",
+  "label": { "en": "Shapes", "pt-BR": "Formas" },
+  "shapes": [
+    {
+      "id": "cloud",
+      "label": { "en": "Cloud", "pt-BR": "Nuvem" },
+      "description": {
+        "en": "A cloud outline: the internet, an external network or a provider boundary.",
+        "pt-BR": "Contorno de nuvem: a internet, uma rede externa ou o limite de um provedor."
+      },
+      "viewBox": "0 0 100 60",
+      "paths": [
+        "M25 55 C10 55 4 46 6 38 C8 30 15 27 21 28 C21 16 31 8 43 10 C51 4 64 5 70 14 C80 12 90 19 90 29 C97 31 99 40 96 47 C93 53 87 55 82 55 Z"
+      ],
+      "size": { "width": 180, "height": 108 },
+      "searchKeys": ["internet", "nuvem", "network", "rede"]
+    },
+    {
+      "id": "callout",
+      "label": { "en": "Callout", "pt-BR": "Balão" },
+      "description": {
+        "en": "A speech balloon for a remark pointing at a neighbour.",
+        "pt-BR": "Balão de fala para uma observação que aponta para um vizinho."
+      },
+      "viewBox": "0 0 100 70",
+      "paths": ["M4 4 H96 V52 H40 L22 66 L26 52 H4 Z"],
+      "size": { "width": 180, "height": 112 },
+      "searchKeys": ["balloon", "speech", "comment", "comentário"]
+    },
+    {
+      "id": "triangle",
+      "label": { "en": "Triangle", "pt-BR": "Triângulo" },
+      "viewBox": "0 0 100 90",
+      "paths": ["M50 4 L96 86 H4 Z"],
+      "size": { "width": 120, "height": 108 },
+      "searchKeys": ["warning", "alerta"]
+    },
+    {
+      "id": "star",
+      "label": { "en": "Star", "pt-BR": "Estrela" },
+      "viewBox": "0 0 100 96",
+      "paths": ["M50 4 L62 36 L96 37 L69 58 L79 92 L50 72 L21 92 L31 58 L4 37 L38 36 Z"],
+      "size": { "width": 120, "height": 116 },
+      "searchKeys": ["highlight", "destaque", "favorite"]
+    },
+    {
+      "id": "block-arrow",
+      "label": { "en": "Block arrow", "pt-BR": "Seta em bloco" },
+      "description": {
+        "en": "A wide arrow for a direction or a stage, labelled inside.",
+        "pt-BR": "Seta larga para uma direção ou etapa, com o texto dentro."
+      },
+      "viewBox": "0 0 100 60",
+      "paths": ["M4 16 H64 V4 L96 30 L64 56 V44 H4 Z"],
+      "size": { "width": 180, "height": 96 },
+      "searchKeys": ["arrow", "seta", "direction", "next"]
+    },
+    {
+      "id": "pentagon",
+      "label": { "en": "Chevron step", "pt-BR": "Etapa em chevron" },
+      "description": {
+        "en": "A pointed step; place several in a row for a process ribbon.",
+        "pt-BR": "Etapa pontuda; coloque várias em sequência para uma faixa de processo."
+      },
+      "viewBox": "0 0 100 50",
+      "paths": ["M4 4 H78 L96 25 L78 46 H4 L18 25 Z"],
+      "size": { "width": 180, "height": 72 },
+      "searchKeys": ["chevron", "step", "etapa", "stage"]
+    },
+    {
+      "id": "cross",
+      "label": { "en": "Cross", "pt-BR": "Cruz" },
+      "viewBox": "0 0 100 100",
+      "paths": ["M36 4 H64 V36 H96 V64 H64 V96 H36 V64 H4 V36 H36 Z"],
+      "size": { "width": 100, "height": 100 },
+      "searchKeys": ["plus", "mais", "add"]
+    }
+  ]
+}

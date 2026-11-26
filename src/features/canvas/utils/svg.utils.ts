@@ -51,6 +51,14 @@ export function validateSvgSize(
   return { valid: true };
 }
 
+/** Whether the markup draws anything: an `<svg>` with at least one element inside it. */
+export function svgHasArtwork(svgContent: string | null | undefined): boolean {
+  // Stored data can lack the field (an old or hand-written file), as `safeSvgMarkup` allows.
+  if (!svgContent?.trim()) return false;
+  const svg = new DOMParser().parseFromString(svgContent, "image/svg+xml").querySelector("svg");
+  return svg !== null && svg.childElementCount > 0;
+}
+
 export function normalizeSvgForStorage(svgContent: string): string {
   let result = svgContent;
   result = result.replace(/<\?xml[^?]*\?>\s*/gi, "");

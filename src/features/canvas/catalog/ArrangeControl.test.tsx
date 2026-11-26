@@ -218,12 +218,16 @@ describe("ArrangeControl", () => {
     fireEvent.click(screen.getByRole("button", { name: "canvasToolbar.arrange.advanced" }));
     expect(screen.getByLabelText(/canvasToolbar.arrange.refNeighborColumns/)).toBeInTheDocument();
 
+    // "auto" is no longer offered on a diagram that does not use it.
+    expect(
+      screen.queryByRole("radio", { name: "canvasToolbar.arrange.referencesAuto" }),
+    ).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.referencesOff" }));
     expect(props.onSettingsChange).toHaveBeenCalledWith({ references: "off" });
     expect(screen.queryByLabelText(/canvasToolbar.arrange.refNeighborColumns/)).toBeNull();
   });
 
-  it("opens the advanced section on a diagram whose references are not the default", () => {
+  it("still shows auto on a diagram that already uses it, so it can be left", () => {
     setup({ settings: { references: "auto" } });
     openMenu();
     expect(

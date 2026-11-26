@@ -3,7 +3,7 @@
 // store consult the registry during rehydrate, before any React tree exists.
 import type { ElementDescriptor } from "./element.types";
 import { registerElement, hasElement } from "./element.registry";
-import { registerCloudFamily, isRegisteredCloudFamily } from "./families/cloud-family.registry";
+import { registerBuiltinPacks } from "./packs/builtin-packs";
 import { apiGroupElement } from "./structural/api-group.element";
 import { dbTableElement } from "./structural/db-table.element";
 import { endpointElement } from "./structural/endpoint.element";
@@ -17,11 +17,6 @@ import { textElement } from "./structural/text.element";
 import { svgElement } from "./structural/svg.element";
 import { unknownElement } from "./structural/unknown.element";
 import { sharedRefElement } from "./structural/shared-ref.element";
-import { gcpFamily } from "./families/gcp/gcp.family";
-import { azureFamily } from "./families/azure/azure.family";
-import { awsFamily } from "./families/aws/aws.family";
-import { k8sFamily } from "./families/k8s/k8s.family";
-import { ossFamily } from "./families/oss/oss.family";
 import { c4Elements } from "./families/c4/c4.family";
 import { deployElements } from "./families/deploy/deploy.family";
 import { k8sStructureElements } from "./families/k8s/structure/k8s-structure.elements";
@@ -50,8 +45,7 @@ for (const element of BUILT_IN_ELEMENTS) {
   if (!hasElement(element.id)) registerElement(element);
 }
 
-// Catalog families: one call each. Descriptors + cloudRegistry adapters land
-// together — no per-family edit of cloud/bootstrap or ComponentType unions.
-for (const family of [awsFamily, gcpFamily, azureFamily, k8sFamily, ossFamily]) {
-  if (!isRegisteredCloudFamily(family.id)) registerCloudFamily(family);
-}
+// Element packs (`packs/<id>/pack.json`): the AWS, GCP, Azure, Kubernetes and OSS catalogs,
+// and every other pack found on disk. Descriptors, strings, accents and cloudRegistry
+// adapters land together — adding a pack edits nothing here.
+registerBuiltinPacks();

@@ -42,6 +42,15 @@ interface UseCanvasEventHandlersParams {
   onRequestFocusTitle?: () => void;
 }
 
+/**
+ * One click on an element opens its inspector: a folded inspector unfolds. Without this a
+ * click selected the element behind a folded rail, and only a double click showed it.
+ */
+function unfoldInspector(): void {
+  const preferences = useCanvasPreferencesStore.getState();
+  if (preferences.elementPanelCollapsed) preferences.setElementPanelCollapsed(false);
+}
+
 function getEventClientPoint(event: MouseEvent | TouchEvent): { x: number; y: number } | null {
   if (event instanceof MouseEvent) {
     return { x: event.clientX, y: event.clientY };
@@ -262,6 +271,7 @@ export function useCanvasEventHandlers({
           setContextMenu(null);
           setSelectedNodeId(node.parentId);
           setSelectedNodeIds(new Set([node.parentId]));
+          unfoldInspector();
         } else {
           onRecordNodeClick?.(node.id);
         }
@@ -289,6 +299,7 @@ export function useCanvasEventHandlers({
         // controlled `selected` flowing store → nodes → React Flow.
         return;
       }
+      unfoldInspector();
       if (funnel.consumedClick(node.id)) {
         // Same race protection when the funnel replaced the selection with
         // just this node on pointerdown (decision #3 — replace half).
@@ -336,6 +347,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeId(null);
       setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
       setContextMenu(null);
+      unfoldInspector();
     },
     [
       setHighlight,
@@ -447,8 +459,7 @@ export function useCanvasEventHandlers({
       prevSelectionRef.current = node.id;
       setSelectedNodeIds(new Set([node.id]));
       setSelectedNodeId(node.id);
-      // A double click asks to work on the element, so a folded inspector unfolds.
-      useCanvasPreferencesStore.getState().setElementPanelCollapsed(false);
+      unfoldInspector();
 
       if (isJsonViewerType(getNodeType(node))) {
         const startEdit = node.data?.onStartEdit as (() => void) | undefined;

@@ -45,6 +45,7 @@ import {
 } from "./io-registry";
 import { registerPanelContribution, unregisterPanelContribution } from "./panel-registry";
 import { createPluginStorage } from "./plugin-storage";
+import { PluginElementPackContribution } from "./element-pack-contributions";
 import { subscribeDiagramChange } from "./diagram-change-notifier";
 import {
   sanitizeComponentPatch,
@@ -56,6 +57,7 @@ import { onVersionAction } from "./version-actions";
 import { overlayRegistry } from "./overlay-registry";
 import { toGeneratedGraph } from "./import-graph";
 import { PluginCodeEditor } from "./components/PluginCodeEditor";
+import { PLUGIN_UI_KIT } from "./ui-kit";
 import { registerChatContextContribution } from "./chat-context-registry";
 import { createPluginFolders } from "@/infrastructure/persistence/pluginFolders";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
@@ -89,6 +91,8 @@ import { useHighlightRequests } from "@/features/canvas/focus/highlightRequests"
  */
 export interface PluginContributionTracker {
   rfTypes: string[];
+  /** v1.17 — the plugin's element pack and shapes, re-registered as one pack. */
+  elementPack: PluginElementPackContribution | null;
   importerIds: string[];
   workspaceImporterIds: string[];
   exporterIds: string[];
@@ -99,6 +103,7 @@ export interface PluginContributionTracker {
 export function createContributionTracker(): PluginContributionTracker {
   return {
     rfTypes: [],
+    elementPack: null,
     importerIds: [],
     workspaceImporterIds: [],
     exporterIds: [],
@@ -110,6 +115,7 @@ export function createContributionTracker(): PluginContributionTracker {
 /** Roll back every tracked contribution; registries end as if the plugin never registered. */
 export function rollbackContributions(tracker: PluginContributionTracker): void {
   for (const rfType of tracker.rfTypes) unregisterDescriptor(rfType);
+  tracker.elementPack?.unregister();
   for (const id of tracker.importerIds) unregisterImporterContribution(id);
   for (const id of tracker.workspaceImporterIds) unregisterWorkspaceImporterContribution(id);
   for (const id of tracker.exporterIds) unregisterExporterContribution(id);
@@ -122,6 +128,7 @@ export function rollbackContributions(tracker: PluginContributionTracker): void 
     }
   }
   tracker.rfTypes = [];
+  tracker.elementPack = null;
   tracker.importerIds = [];
   tracker.workspaceImporterIds = [];
   tracker.exporterIds = [];
@@ -384,6 +391,18 @@ export function createScopedPluginApi(
       tracker.rfTypes.push(descriptor.rfType);
     },
 
+    registerElementPack(pack) {
+      warnUndeclaredCapability(manifest, "canvas:elements");
+      tracker.elementPack ??= new PluginElementPackContribution(manifest);
+      tracker.elementPack.registerPack(pack);
+    },
+
+    registerShape(shape) {
+      warnUndeclaredCapability(manifest, "canvas:elements");
+      tracker.elementPack ??= new PluginElementPackContribution(manifest);
+      tracker.elementPack.registerShape(shape);
+    },
+
     registerImporter(handler: ImporterContribution): void {
       warnUndeclaredCapability(manifest, "io:importers");
       registerImporterContribution(handler);
@@ -552,7 +571,7 @@ export function createScopedPluginApi(
 
     versions: scopedVersions(manifest, tracker),
 
-    ui: { CodeEditor: PluginCodeEditor },
+    ui: { ...PLUGIN_UI_KIT, CodeEditor: PluginCodeEditor },
 
     storage: createPluginStorage(manifest.id, storagePort),
 

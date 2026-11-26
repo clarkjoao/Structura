@@ -16,6 +16,14 @@ function thresholds(quotaBytes: number | null): { warning: number; danger: numbe
 
 export type StorageHealthLevel = "ok" | "warning" | "danger" | "critical";
 
+/** The level a measurement alone gives; "critical" only ever comes from a failed write. */
+function levelFor(usedBytes: number, quotaBytes: number | null): StorageHealthLevel {
+  const { warning, danger } = thresholds(quotaBytes);
+  if (usedBytes >= danger) return "danger";
+  if (usedBytes >= warning) return "warning";
+  return "ok";
+}
+
 interface SaveStatusState {
   status: SaveStatus;
   lastSavedAt: number | null;
@@ -36,7 +44,16 @@ export const useSaveStatusStore = create<SaveStatusState>((set, get) => ({
   status: "idle",
   lastSavedAt: null,
   _setSaving: () => set({ status: "pending" }),
-  _setSaved: () => set({ status: "saved", lastSavedAt: Date.now() }),
+  _setSaved: () => {
+    const { storageHealthLevel, storageUsedBytes, storageQuotaBytes } = get();
+    // A write that went through is proof there is room again: "full" ends here, back to what the
+    // last measurement says, instead of waiting for usage to fall under the warning line.
+    const health =
+      storageHealthLevel === "critical"
+        ? { storageHealthLevel: levelFor(storageUsedBytes, storageQuotaBytes) }
+        : {};
+    set({ status: "saved", lastSavedAt: Date.now(), ...health });
+  },
   _setError: () => set({ status: "error" }),
 
   storageUsedBytes: 0,
@@ -46,14 +63,8 @@ export const useSaveStatusStore = create<SaveStatusState>((set, get) => ({
 
   _setStorageUsage: (usedBytes: number, quotaBytes: number | null = null) => {
     const prev = get().storageHealthLevel;
-    const { warning, danger } = thresholds(quotaBytes);
-
-    let level: StorageHealthLevel = "ok";
-    if (usedBytes >= danger) {
-      level = "danger";
-    } else if (usedBytes >= warning) {
-      level = "warning";
-    }
+    const { warning } = thresholds(quotaBytes);
+    const level = levelFor(usedBytes, quotaBytes);
 
     const measured = {
       storageUsedBytes: usedBytes,

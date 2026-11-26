@@ -33,9 +33,10 @@ React plugins are in individual folders and require a build step. They are writt
 you `import { useState } from "react"` and use JSX directly (no `getReact()`, no bundled
 React). See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/README.md).
 
-| Plugin                                                      | Capabilities                                                            | Description                         |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------- |
-| [structura-plugin-example-ui](structura-plugin-example-ui/) | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
+| Plugin                                                            | Capabilities                                                            | Description                         |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------- |
+| [structura-plugin-example-ui](structura-plugin-example-ui/)       | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
+| [structura-plugin-observability](structura-plugin-observability/) | `canvas:elements`, `ui:panels`, `ui:overlays`, `diagram:write`          | Element pack + shape + UI kit panel |
 
 ```bash
 cd plugins/structura-plugin-example-ui
@@ -68,18 +69,19 @@ uninstall them. A plain `npm run build` ships zero built-in plugins.
 
 See [docs/architecture/extension-points.md](../docs/architecture/extension-points.md) for the full extension point inventory.
 
-| Capability          | Description                                                                   |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `events:diagram`    | Subscribe to diagram changes via `onDiagramChange`                            |
-| `diagram:read`      | Read diagram data via `getDiagram()`                                          |
-| `diagram:write`     | Modify diagrams via `updateComponent()`, `moveComponents()`                   |
-| `io:importers`      | Register file importers via `registerImporter()`                              |
-| `io:exporters`      | Register file exporters via `registerExporter()`                              |
-| `ui:panels`         | Add panels to toolbar or inspector via `registerPanel()`                      |
-| `ui:overlays`       | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()`       |
-| `canvas:node-types` | Register custom node types via `registerNodeType()`                           |
-| `files:folder`      | Read and write a folder the user picked via `files` (API 1.4)                 |
-| `llm:context`       | Answer the chat for diagrams the plugin owns (`registerChatContext`, API 1.6) |
+| Capability          | Description                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| `events:diagram`    | Subscribe to diagram changes via `onDiagramChange`                                             |
+| `diagram:read`      | Read diagram data via `getDiagram()`                                                           |
+| `diagram:write`     | Modify diagrams via `updateComponent()`, `moveComponents()`                                    |
+| `io:importers`      | Register file importers via `registerImporter()`                                               |
+| `io:exporters`      | Register file exporters via `registerExporter()`                                               |
+| `ui:panels`         | Add panels to toolbar or inspector via `registerPanel()`                                       |
+| `ui:overlays`       | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()`                        |
+| `canvas:node-types` | Register custom node types via `registerNodeType()`                                            |
+| `canvas:elements`   | Add catalog elements and SVG shapes via `registerElementPack()` / `registerShape()` (API 1.17) |
+| `files:folder`      | Read and write a folder the user picked via `files` (API 1.4)                                  |
+| `llm:context`       | Answer the chat for diagrams the plugin owns (`registerChatContext`, API 1.6)                  |
 
 ## Developing Plugins
 
@@ -150,6 +152,106 @@ StructuraPlugin.registerImporter({
 A `parentKey` that is missing, names a component that cannot hold this type, or closes a cycle
 puts the component at the top level. Connections whose ends cannot be resolved are skipped and
 counted.
+
+### Structura's components: the UI kit (API 1.18)
+
+Draw plugin UI with the host's own components, so it matches Structura in light and dark, with
+the same focus rings and disabled states — instead of copying Tailwind classes, which only
+exist while the host's CSS happens to use them.
+
+| Component                    | Props (besides `className` / `style`)                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Button`                     | `variant`: `default` `secondary` `outline` `ghost` `destructive` `link`; `size`: `default` `sm` `lg` `icon`; button attributes |
+| `Input`, `Textarea`, `Label` | the HTML element's attributes                                                                                                  |
+| `Field`                      | `label`, `hint`, `error`, `htmlFor`; one control as children (gets the id and `aria-describedby`)                              |
+| `Checkbox`, `Switch`         | `checked`, `defaultChecked`, `onCheckedChange(boolean)`, `disabled`                                                            |
+| `Select`                     | `options: [{ value, label, disabled? }]`, `value`, `defaultValue`, `onValueChange(value)`, `placeholder`                       |
+| `Badge`                      | `variant`: `default` `secondary` `destructive` `outline`                                                                       |
+| `Card`                       | `title`, `description`, `footer`, children                                                                                     |
+| `Tabs`                       | `tabs: [{ value, label, content }]`, `value`, `defaultValue`, `onValueChange`                                                  |
+| `Tooltip`                    | `content`, `side`; one element as children                                                                                     |
+| `Separator`                  | `orientation`                                                                                                                  |
+| `Stack`                      | `direction` (`column`), `gap` (×4px, 2), `align`, `justify`, `wrap`                                                            |
+
+**JavaScript plugins** (no build) use `api.ui`:
+
+```javascript
+activate: function (api) {
+  var ui = api.ui;
+  api.registerPanel({
+    id: "my-plugin/panel",
+    slot: "element-inspector",
+    title: "My panel",
+    component: function () {
+      return React.createElement(ui.Button, { variant: "outline" }, "Run");
+    },
+  });
+}
+```
+
+**Bundled plugins** import `@structura/ui`, an external bound to a host global like `react`:
+
+```javascript
+// vite.config.js
+rollupOptions: {
+  external: ["react", "react/jsx-runtime", "@structura/ui"],
+  output: {
+    globals: {
+      react: "__REACT__",
+      "react/jsx-runtime": "__REACT_JSX_RUNTIME__",
+      "@structura/ui": "__STRUCTURA_UI__",
+    },
+  },
+}
+```
+
+```tsx
+import { Button, Field, Input, Stack } from "@structura/ui";
+```
+
+`npm run sync-types` copies the kit's types (`src/types/structura-ui.d.ts`); map them in
+`tsconfig.json` with `"paths": { "@structura/ui": ["./src/types/structura-ui.d.ts"] }`. Declare
+`"apiVersion": "^1.18"`. For anything the kit lacks, use the theme tokens —
+`hsl(var(--foreground))`, `--muted-foreground`, `--primary`, `--border`, `--card`, … — which
+follow light and dark. Icons: bundle your own (`lucide-react` tree-shakes).
+
+### Element packs and shapes (API 1.17)
+
+`registerElementPack` adds a family of catalog elements — cards with an icon and a category
+accent, like the AWS services — and `registerShape` adds SVG shapes. Both appear in the
+palette, the element catalog, search and the assistant, under one group per plugin. The format
+is the host's built-in pack format (`src/features/elements/packs/<id>/pack.json`); see the
+`examples/element-pack` plugin.
+
+```javascript
+api.registerElementPack({
+  id: "my-plugin", // must equal the manifest id; types become "my-plugin/<id>"
+  label: { en: "Acme Cloud", "pt-BR": "Acme Cloud" },
+  categories: [
+    {
+      id: "compute",
+      label: { en: "Compute", "pt-BR": "Computação" },
+      description: { en: "Acme compute.", "pt-BR": "Computação da Acme." },
+      accent: { light: "#3366ff", dark: "#6b8cff" }, // hex or "H S% L%"
+    },
+  ],
+  services: [{ id: "vm", name: "VM", category: "compute", icon: "vm", concepts: ["serverless"] }],
+  icons: { vm: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">…</svg>' },
+});
+
+api.registerShape({
+  id: "hexagon",
+  label: { en: "Hexagon", "pt-BR": "Hexágono" },
+  viewBox: "0 0 100 88",
+  paths: ["M26 2 H74 L98 44 L74 86 H26 L2 44 Z"], // path data only
+});
+```
+
+Every label needs `en` and `pt-BR`. The pack is validated: an unknown category, a missing
+icon, a duplicate id or an outline with anything but path data throws, registering nothing.
+Plugin ids with dots or capitals cannot carry a pack (pack ids are lowercase letters, digits
+and dashes). Disabling the plugin removes its elements; nodes already drawn show as unknown,
+data kept, until it is enabled again.
 
 ### Editing diagrams and folders (API 1.4)
 

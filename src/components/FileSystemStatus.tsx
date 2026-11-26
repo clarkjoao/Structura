@@ -209,11 +209,13 @@ export function FileSystemStatus({
     (status === "needs_permission" || status === "error" || status === "connecting");
 
   useEffect(() => {
+    // A folder that lost its permission is restored, not replaced by picking another one.
     registerConnectFolderRequestHandler(() => {
-      void connect();
+      if (status === "needs_permission" || status === "error") void reconnectWithPermission();
+      else if (status === "disconnected") void connect();
     });
     return () => registerConnectFolderRequestHandler(null);
-  }, [connect]);
+  }, [connect, reconnectWithPermission, status]);
 
   const localDiagramCount = useDiagramStore(useShallow((s) => Object.keys(s.diagrams).length));
 

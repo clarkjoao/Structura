@@ -11,6 +11,8 @@ export type UnknownNodeData = {
   elementId: string;
   name: string;
   rawContent?: string;
+  /** The type the canvas could not draw; absent for an `unknown` component's own content. */
+  originalType?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
   /** One slot a side per edge; see the element's `buildData`. */
@@ -45,15 +47,16 @@ const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>
         incomingCount={d.incomingCount ?? 1}
         outgoingCount={d.outgoingCount ?? 1}
       />
+      {/* Quiet on purpose: content kept as it came is not an error, only something the canvas
+          cannot draw. The dashed outline says "placeholder"; the chip says what it was. */}
       <div
         aria-label={t("unknownNode.aria", { name: d.name })}
-        className={`relative flex flex-col w-full h-full overflow-hidden rounded-lg border-2 border-dashed transition-shadow duration-200 ${
-          isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]" : "opacity-90"
+        title={t("unknownNode.badge")}
+        className={`relative flex h-full w-full flex-col overflow-hidden rounded-lg border-[1.5px] border-dashed bg-card transition-shadow duration-200 ${
+          isActive
+            ? "border-primary ring-2 ring-primary/30"
+            : "border-muted-foreground/45 hover:border-muted-foreground/70"
         }`}
-        style={{
-          borderColor: "#f97316",
-          backgroundColor: "hsl(var(--card))",
-        }}
       >
         {collabHighlight && (
           <div
@@ -65,27 +68,27 @@ const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>
         {!d.compareBadges && d.versionBadge && (
           <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         )}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-dashed border-orange-300/50">
-          <CircleHelp className="h-4 w-4 shrink-0 text-orange-400" />
-          <span className="text-xs font-medium truncate flex-1 text-muted-foreground">
+        <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
+          <CircleHelp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
             {d.name || t("unknownNode.defaultName")}
           </span>
-          <span className="text-[9px] font-mono rounded bg-orange-100 dark:bg-orange-950/40 text-orange-500 px-1.5 py-0.5 shrink-0">
-            {t("unknownNode.badge")}
+        </div>
+        <div className="px-3">
+          <span className="inline-block max-w-full truncate rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            {d.originalType ?? t("unknownNode.badge")}
           </span>
         </div>
         {d.rawContent ? (
-          <div className="flex-1 overflow-auto px-3 py-2 min-h-0">
-            <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="min-h-0 flex-1 overflow-hidden px-3 pt-2 pb-2.5">
+            <pre className="line-clamp-4 whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-muted-foreground">
               {d.rawContent}
             </pre>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center px-3 py-2">
-            <p className="text-xs italic text-muted-foreground text-center">
-              {t("unknownNode.emptyHint")}
-            </p>
-          </div>
+          <p className="mt-auto px-3 pb-2.5 text-[11px] text-muted-foreground">
+            {t(d.originalType ? "unknownNode.cannotDraw" : "unknownNode.emptyHint")}
+          </p>
         )}
       </div>
     </>

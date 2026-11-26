@@ -1,0 +1,447 @@
+{
+  "id": "gcp",
+  "typeIds": "verbatim",
+  "label": {
+    "en": "GCP services",
+    "pt-BR": "GCP Services"
+  },
+  "groupLabel": {
+    "en": "GCP",
+    "pt-BR": "GCP"
+  },
+  "primaryCategories": ["gcp-compute", "gcp-database", "gcp-storage", "gcp-networking", "gcp-ai"],
+  "categories": [
+    {
+      "id": "gcp-compute",
+      "label": {
+        "en": "Compute",
+        "pt-BR": "Compute"
+      },
+      "description": {
+        "en": "GCP compute services (VMs, containers, serverless).",
+        "pt-BR": "Serviços de computação do GCP (VMs, containers, serverless)."
+      },
+      "accent": {
+        "light": "214 89% 55%",
+        "dark": "214 89% 62%"
+      }
+    },
+    {
+      "id": "gcp-storage",
+      "label": {
+        "en": "Storage",
+        "pt-BR": "Storage"
+      },
+      "description": {
+        "en": "GCP storage services (object storage, disks).",
+        "pt-BR": "Serviços de armazenamento do GCP (object storage, discos)."
+      },
+      "accent": {
+        "light": "142 60% 38%",
+        "dark": "142 60% 44%"
+      }
+    },
+    {
+      "id": "gcp-database",
+      "label": {
+        "en": "Databases",
+        "pt-BR": "Databases"
+      },
+      "description": {
+        "en": "GCP managed databases (SQL, Spanner, BigQuery).",
+        "pt-BR": "Bancos gerenciados do GCP (SQL, Spanner, BigQuery)."
+      },
+      "accent": {
+        "light": "214 75% 45%",
+        "dark": "214 75% 52%"
+      }
+    },
+    {
+      "id": "gcp-networking",
+      "label": {
+        "en": "Networking",
+        "pt-BR": "Networking"
+      },
+      "description": {
+        "en": "GCP networking and connectivity.",
+        "pt-BR": "Rede e conectividade do GCP."
+      },
+      "accent": {
+        "light": "198 85% 42%",
+        "dark": "198 85% 49%"
+      }
+    },
+    {
+      "id": "gcp-security",
+      "label": {
+        "en": "Security",
+        "pt-BR": "Security"
+      },
+      "description": {
+        "en": "GCP security and identity services.",
+        "pt-BR": "Serviços de segurança e identidade do GCP."
+      },
+      "accent": {
+        "light": "4 75% 48%",
+        "dark": "4 75% 55%"
+      }
+    },
+    {
+      "id": "gcp-analytics",
+      "label": {
+        "en": "Analytics",
+        "pt-BR": "Analytics"
+      },
+      "description": {
+        "en": "GCP data analytics and observability.",
+        "pt-BR": "Analítica de dados e observabilidade do GCP."
+      },
+      "accent": {
+        "light": "270 55% 48%",
+        "dark": "270 55% 55%"
+      }
+    },
+    {
+      "id": "gcp-ai",
+      "label": {
+        "en": "AI & Machine Learning",
+        "pt-BR": "AI & Machine Learning"
+      },
+      "description": {
+        "en": "GCP AI and machine-learning services.",
+        "pt-BR": "Serviços de IA e machine learning do GCP."
+      },
+      "accent": {
+        "light": "238 70% 52%",
+        "dark": "238 70% 60%"
+      }
+    },
+    {
+      "id": "gcp-devtools",
+      "label": {
+        "en": "Developer Tools",
+        "pt-BR": "Developer Tools"
+      },
+      "description": {
+        "en": "GCP developer and DevOps tooling.",
+        "pt-BR": "Ferramentas de desenvolvimento e DevOps do GCP."
+      },
+      "accent": {
+        "light": "24 100% 48%",
+        "dark": "24 100% 55%"
+      }
+    },
+    {
+      "id": "gcp-integration",
+      "label": {
+        "en": "Integration",
+        "pt-BR": "Integration"
+      },
+      "description": {
+        "en": "GCP integration and messaging services.",
+        "pt-BR": "Serviços de integração e mensageria do GCP."
+      },
+      "accent": {
+        "light": "174 58% 38%",
+        "dark": "174 58% 44%"
+      }
+    },
+    {
+      "id": "gcp-management",
+      "label": {
+        "en": "Management",
+        "pt-BR": "Management"
+      },
+      "description": {
+        "en": "GCP management and marketplace tools.",
+        "pt-BR": "Ferramentas de gestão e marketplace do GCP."
+      },
+      "accent": {
+        "light": "220 18% 48%",
+        "dark": "220 18% 55%"
+      }
+    },
+    {
+      "id": "gcp-media",
+      "label": {
+        "en": "Media",
+        "pt-BR": "Media"
+      },
+      "description": {
+        "en": "GCP media services.",
+        "pt-BR": "Serviços de mídia do GCP."
+      },
+      "accent": {
+        "light": "330 65% 48%",
+        "dark": "330 65% 55%"
+      }
+    },
+    {
+      "id": "gcp-general",
+      "label": {
+        "en": "General",
+        "pt-BR": "General"
+      },
+      "description": {
+        "en": "Other GCP services.",
+        "pt-BR": "Demais serviços do GCP."
+      },
+      "accent": {
+        "light": "214 89% 55%",
+        "dark": "214 89% 62%"
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "computeengine",
+      "name": "Compute Engine",
+      "category": "gcp-compute",
+      "icon": "computeengine-512-color-rgb"
+    },
+    {
+      "id": "cloudrun",
+      "name": "Cloud Run",
+      "category": "gcp-compute",
+      "icon": "cloudrun-512-color-rgb",
+      "concepts": ["serverless"]
+    },
+    {
+      "id": "gke",
+      "name": "Google Kubernetes Engine",
+      "category": "gcp-compute",
+      "icon": "gke-512-color"
+    },
+    {
+      "id": "containers",
+      "name": "Containers",
+      "category": "gcp-compute",
+      "icon": "containers-512-color"
+    },
+    {
+      "id": "serverlesscomputing",
+      "name": "Serverless Computing",
+      "category": "gcp-compute",
+      "icon": "serverlesscomputing-512-color",
+      "concepts": ["serverless"]
+    },
+    {
+      "id": "cloud-storage",
+      "name": "Cloud Storage",
+      "category": "gcp-storage",
+      "icon": "cloud-storage-512-color",
+      "concepts": ["object-storage"]
+    },
+    {
+      "id": "hyperdisk",
+      "name": "Hyperdisk",
+      "category": "gcp-storage",
+      "icon": "hyperdisk-512-color"
+    },
+    {
+      "id": "storage",
+      "name": "Storage",
+      "category": "gcp-storage",
+      "icon": "storage-512-color"
+    },
+    {
+      "id": "bigquery",
+      "name": "BigQuery",
+      "category": "gcp-database",
+      "icon": "bigquery-512-color",
+      "concepts": ["database", "warehouse"]
+    },
+    {
+      "id": "cloudsql",
+      "name": "Cloud SQL",
+      "category": "gcp-database",
+      "icon": "cloudsql-512-color",
+      "concepts": ["database", "relational-db"]
+    },
+    {
+      "id": "cloudspanner",
+      "name": "Cloud Spanner",
+      "category": "gcp-database",
+      "icon": "cloudspanner-512-color",
+      "concepts": ["database", "relational-db"]
+    },
+    {
+      "id": "alloydb",
+      "name": "AlloyDB",
+      "category": "gcp-database",
+      "icon": "alloydb-512-color",
+      "concepts": ["database", "relational-db"]
+    },
+    {
+      "id": "networking",
+      "name": "Networking",
+      "category": "gcp-networking",
+      "icon": "networking-512-color-rgb"
+    },
+    {
+      "id": "hybridmulticloud",
+      "name": "Hybrid & Multi-Cloud",
+      "category": "gcp-networking",
+      "icon": "hybridmulticloud-512-color"
+    },
+    {
+      "id": "distributedcloud",
+      "name": "Distributed Cloud",
+      "category": "gcp-networking",
+      "icon": "distributedcloud-512-color"
+    },
+    {
+      "id": "securityidentity",
+      "name": "Security & Identity",
+      "category": "gcp-security",
+      "icon": "securityidentity-512-color"
+    },
+    {
+      "id": "securitycommandcenter",
+      "name": "Security Command Center",
+      "category": "gcp-security",
+      "icon": "securitycommandcenter-512-color"
+    },
+    {
+      "id": "secops",
+      "name": "SecOps",
+      "category": "gcp-security",
+      "icon": "secops-512-color-rgb"
+    },
+    {
+      "id": "mandiant",
+      "name": "Mandiant",
+      "category": "gcp-security",
+      "icon": "mandiant-512-color"
+    },
+    {
+      "id": "threatintelligence",
+      "name": "Threat Intelligence",
+      "category": "gcp-security",
+      "icon": "threatintelligence-512-color"
+    },
+    {
+      "id": "dataanalytics",
+      "name": "Data Analytics",
+      "category": "gcp-analytics",
+      "icon": "dataanalytics-512-color"
+    },
+    {
+      "id": "businessintelligence",
+      "name": "Business Intelligence",
+      "category": "gcp-analytics",
+      "icon": "businessintelligence-512-color"
+    },
+    {
+      "id": "looker",
+      "name": "Looker",
+      "category": "gcp-analytics",
+      "icon": "looker-512-color"
+    },
+    {
+      "id": "observability",
+      "name": "Observability",
+      "category": "gcp-analytics",
+      "icon": "observability-512-color",
+      "concepts": ["monitoring"]
+    },
+    {
+      "id": "operations",
+      "name": "Operations",
+      "category": "gcp-analytics",
+      "icon": "operations-512-color",
+      "concepts": ["monitoring"]
+    },
+    {
+      "id": "aimachinelearning",
+      "name": "AI & Machine Learning",
+      "category": "gcp-ai",
+      "icon": "aimachinelearning-512-color"
+    },
+    {
+      "id": "vertexai",
+      "name": "Vertex AI",
+      "category": "gcp-ai",
+      "icon": "vertexai-512-color"
+    },
+    {
+      "id": "agents",
+      "name": "AI Agents",
+      "category": "gcp-ai",
+      "icon": "agents-512-color"
+    },
+    {
+      "id": "aihypercomputer",
+      "name": "AI Hypercomputer",
+      "category": "gcp-ai",
+      "icon": "aihypercomputer-512-color"
+    },
+    {
+      "id": "developer-tools",
+      "name": "Developer Tools",
+      "category": "gcp-devtools",
+      "icon": "developer-tools-512-color"
+    },
+    {
+      "id": "devops",
+      "name": "DevOps",
+      "category": "gcp-devtools",
+      "icon": "devops-512-color"
+    },
+    {
+      "id": "apigee",
+      "name": "Apigee",
+      "category": "gcp-devtools",
+      "icon": "apigee-512-color-rgb",
+      "concepts": ["api-gateway"]
+    },
+    {
+      "id": "integrationservices",
+      "name": "Integration Services",
+      "category": "gcp-integration",
+      "icon": "integrationservices-512-color"
+    },
+    {
+      "id": "managementtools",
+      "name": "Management Tools",
+      "category": "gcp-management",
+      "icon": "managementtools-512-color"
+    },
+    {
+      "id": "marketplace",
+      "name": "Marketplace",
+      "category": "gcp-management",
+      "icon": "marketplace-512-color"
+    },
+    {
+      "id": "mediaservices",
+      "name": "Media Services",
+      "category": "gcp-media",
+      "icon": "mediaservices-512-color"
+    },
+    {
+      "id": "collaboration",
+      "name": "Collaboration",
+      "category": "gcp-general",
+      "icon": "collaboration-512-color"
+    },
+    {
+      "id": "mapsgeospatial",
+      "name": "Maps & Geospatial",
+      "category": "gcp-general",
+      "icon": "mapsgeospatial-512-color"
+    },
+    {
+      "id": "webmobile",
+      "name": "Web & Mobile",
+      "category": "gcp-general",
+      "icon": "webmobile-512-color"
+    },
+    {
+      "id": "migration",
+      "name": "Migration",
+      "category": "gcp-general",
+      "icon": "migration-512-color"
+    }
+  ]
+}
