@@ -5,12 +5,14 @@ import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { ViewerCanvas, type ViewerElementRef } from "@/features/viewer/components/ViewerCanvas";
 import { arrangePreviewDiagram, arrangeSignature, withContentOf } from "./arrange";
 import { buildPreviewDiagram, changedComponentIds } from "./build-diagram";
+import { answerPlaceRequest } from "./place-request";
 import type { PreviewArrange, PreviewGraph } from "./protocol";
 import {
   ARRANGE,
   BLOCKED,
   LOAD_GRAPH,
   OPEN_PROBLEM,
+  PLACE,
   PROBE,
   PROBE_RESULT,
   READY,
@@ -100,7 +102,11 @@ export function EmbedPreview() {
     const onMessage = (event: MessageEvent) => {
       const message = readEmbedMessage(event.data);
       if (!message) return;
-      if (message.type === LOAD_GRAPH) {
+      if (message.type === PLACE) {
+        // The host places its picture with the canvas's placement through us; independent of
+        // the picture on screen.
+        void answerPlaceRequest(message).then(postToHost);
+      } else if (message.type === LOAD_GRAPH) {
         const changed = changedComponentIds(lastGraph.current, message.graph);
         lastGraph.current = message.graph;
         if (message.arrange) arrange = message.arrange;
