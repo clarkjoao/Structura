@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildViewDiagram, type ResolvedViewInput } from "./view-diagram";
 import { toImporterGraph } from "./importer-graph";
-import { placeView, toLayoutGraph } from "./layout";
+import { placeView } from "./layout";
 import {
   layoutFor,
   parseLayoutFiles,
@@ -197,9 +197,8 @@ describe("buildViewDiagram", () => {
 
   it("goes through layout and the importer graph, carrying panel kind and the linked view", () => {
     const view = buildViewDiagram(workspace, context);
-    const graph = toLayoutGraph(view);
     const boxes = new Map(
-      graph.nodes.map((n, i) => [n.id, { x: i * 300, y: 0, width: n.width, height: n.height }]),
+      view.nodes.map((n, i) => [n.id, { x: i * 300, y: 0, width: 180, height: 80 }]),
     );
     const out = toImporterGraph(placeView(view, { boxes, edgeRoutes: new Map() }));
     expect(out.components.find((c) => c.key === "BoundedContext/shop")).toMatchObject({

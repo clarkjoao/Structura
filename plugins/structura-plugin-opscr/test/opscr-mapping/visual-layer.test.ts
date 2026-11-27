@@ -5,18 +5,22 @@ import { AZURE_CATEGORIES } from "@/features/cloud/providers/azure/azure.catalog
 import { GCP_CATEGORIES } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { OSS_CATEGORIES } from "@/features/elements/families/oss/oss.catalog";
 import { PanelKind } from "@/features/diagram/enums";
-import { buildTechnicalView } from "./technical-view";
-import { parseLayoutFile } from "./layout-file";
-import { placeView } from "./layout";
-import { toImporterGraph, type ImporterGraph, type ImporterGraphComponent } from "./importer-graph";
+import { buildTechnicalView } from "../../src/opscr-mapping/technical-view";
+import { parseLayoutFile } from "../../src/opscr-mapping/layout-file";
+import { placeView } from "../../src/opscr-mapping/layout";
+import {
+  toImporterGraph,
+  type ImporterGraph,
+  type ImporterGraphComponent,
+} from "../../src/opscr-mapping/importer-graph";
 import {
   VISUAL_SERVICES,
   boundaryPanelKind,
   parseVisualFile,
   withVisualLayer,
   type VisualFile,
-} from "./visual-layer";
-import type { OpscrManifestInput } from "./types";
+} from "../../src/opscr-mapping/visual-layer";
+import type { OpscrManifestInput } from "../../src/opscr-mapping/types";
 
 interface Fixture {
   manifests: OpscrManifestInput[];
@@ -25,7 +29,9 @@ interface Fixture {
 }
 
 const fixture = (name: string): Fixture =>
-  JSON.parse(readFileSync(`${__dirname}/__fixtures__/${name}.import.json`, "utf8")) as Fixture;
+  JSON.parse(
+    readFileSync(`${__dirname}/../../src/opscr-mapping/__fixtures__/${name}.import.json`, "utf8"),
+  ) as Fixture;
 
 /** The importer graph the plugin draws for an imported workspace, before the visual layer. */
 function technicalGraph(f: Fixture): ImporterGraph {

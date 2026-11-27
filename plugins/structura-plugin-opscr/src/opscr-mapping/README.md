@@ -10,11 +10,12 @@ Spec: `openspec/changes/opscr-technical-view/`.
 
 ## Rules
 
-- **Framework-agnostic.** Relative imports only: no `@/features`, no plugin API, no `opscr`. A test
-  enforces it. Plugins copy this folder with a `sync-shared` script, as they do `export-core`
-  ([ADR-0009](../../../docs/adr/0009-export-core-sharing.md)).
+- **The plugin's, not the app's.** It lives in `structura-plugin-opscr`; the app does not import
+  it. The VSCode extension copies this folder with its `sync-shared` script.
+- **Framework-agnostic.** Relative imports only: no `@/features`, no plugin API, no `opscr`, so the
+  copy works in the extension. A test (`test/opscr-mapping/elements.test.ts`) enforces it.
 - **Structural input.** `OpscrWorkspaceInput` is only what the projection reads. An `opscr/core`
-  `Workspace` satisfies it, so callers pass it straight through and the app's CI never needs opscr.
+  `Workspace` satisfies it, so callers pass it straight through.
 - **Never throws.** Anything `opscr compile` would reject degrades and is reported in `omitted` /
   `dropped`.
 
@@ -22,20 +23,21 @@ Spec: `openspec/changes/opscr-technical-view/`.
 
 ```ts
 import { compileSources } from "opscr/core"; // in the adapter, not here
-import { buildTechnicalView, placeView, toLayoutGraph } from "./opscr-mapping";
+import { buildTechnicalView, placeView, placeViewWith, toImporterGraph } from "./opscr-mapping";
 
 const { workspace } = await compileSources({ files });
 const view = buildTechnicalView(workspace);
-const placed = placeView(view, await layout(toLayoutGraph(view))); // app's ELK engine
-const graph = toImporterGraph(placed); // plugin importer result / embed preview input
+const placed = await placeViewWith(api.layout, view, previous); // Structura places it
+const graph = toImporterGraph(placeView(view, placed)); // plugin importer result / embed input
 ```
 
-A plugin lays out with the app's engine through `api.layout.arrange` (API 1.19); the VSCode
-extension, which runs in Node and cannot reach it, uses `src/lib/opscr-layout` (`layoutView`, same
-ELK options). To keep a picture still across edits, seed it with the previous boxes and pass the
-result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep their place. Where
-most of a panel is kept, a new element goes beside the sibling it is connected to, along the flow;
-where most is new, it goes where the engine put it.
+This library decides _what_ is drawn; Structura decides _where and how big_. `placeViewWith`
+hands the view to the host's placement — the plugin's `api.layout.place` (API 1.21), the VSCode
+extension's webview (`STRUCTURA_PLACE`, answered by the same implementation) — so every channel
+sizes and places a workspace the way the canvas does: with nothing drawn, the canvas's Arrange;
+afterwards, what is drawn stays exactly where it is (`previous`, by element key, relative to its
+parent) and each new element goes beside what it is connected to, along the reading, where it
+overlaps nothing.
 
 ## The technical view
 

@@ -25,7 +25,7 @@ import {
   type DrawnThrough,
   type GraphElementRef,
   type SourceLocation,
-} from "../generated/opscr-mapping";
+} from "../opscr-mapping";
 import type { AddChoice } from "../engine/adopt";
 import { OpscrEngine, type EngineEvent, type ViewLink } from "../engine/engine";
 import { useViewDiagrams } from "./useViewDiagrams";

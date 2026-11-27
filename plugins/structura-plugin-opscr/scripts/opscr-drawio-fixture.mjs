@@ -1,5 +1,5 @@
 /**
- * Regenerates the draw.io import fixtures used by the `src/lib/opscr-mapping` visual-layer tests.
+ * Regenerates the draw.io import fixtures used by the `src/opscr-mapping` visual-layer tests.
  *
  * Runs opscr's draw.io import (`opscr/import-drawio`, no agent step) on the drawings below and
  * writes, per drawing, the compiled manifests (kind, name and spec — the shape the mapping reads),
@@ -15,12 +15,12 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const opscrDir = resolve(process.env.OPSCR_DIR ?? join(here, "../../opscr"));
-const outDir = join(here, "../src/lib/opscr-mapping/__fixtures__");
+const opscrDir = resolve(process.env.OPSCR_DIR ?? join(here, "../../../../opscr"));
+const outDir = join(here, "../src/opscr-mapping/__fixtures__");
 const DRAWINGS = [
   join(opscrDir, "tests/import/corpus/vendor/aws/example-microservices.drawio"),
   process.env.SIMPLE_ARCH ??
-    join(here, "../../test/drawio-diagrams/examples/aws-simple-architecture.drawio"),
+    join(here, "../../../../test/drawio-diagrams/examples/aws-simple-architecture.drawio"),
 ];
 
 const core = await import(pathToFileURL(join(opscrDir, "dist/core.js")).href);

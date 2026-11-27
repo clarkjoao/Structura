@@ -4,7 +4,7 @@ import {
   parseVisualFile,
   withVisualLayer,
   type DrawnThrough,
-} from "../generated/opscr-mapping";
+} from "../opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginDiagramChanges,
@@ -23,7 +23,7 @@ import {
   sidecarText,
   type BindingState,
 } from "./sync";
-import type { ImporterGraph, ViewBox, ViewLayoutResult } from "../generated/opscr-mapping";
+import type { ImporterGraph, ViewBox, ViewLayoutResult } from "../opscr-mapping";
 import { mergeBinding, splitBinding, visualMoves, visualText, withoutVisual } from "./visual";
 
 /**
@@ -61,6 +61,8 @@ export type Projector = (
   previous: ViewLayoutResult | undefined,
   /** The opscr View to draw; undefined draws the whole workspace. */
   view?: string,
+  /** The diagram it is drawn on: Structura places it with that diagram's direction and settings. */
+  diagramId?: string,
 ) => Promise<{
   graph?: ImporterGraph;
   diagnostics: unknown[];
@@ -293,6 +295,7 @@ export class OpscrEngine {
         ? undefined
         : previousLayout(binding, diagram, this.text(LAYOUT_FILE)),
       binding.view,
+      diagram.id,
     );
     this.emit({ type: "diagnostics", diagnostics: projection.diagnostics });
     if (projection.views) {

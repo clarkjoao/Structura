@@ -1,10 +1,9 @@
 /**
  * opscr-mapping — projects an opscr workspace into a Structura technical view.
  *
- * Framework-agnostic and shared: the app, `structura-plugin-opscr` and the VSCode
- * preview consume it (plugins through `sync-shared`, as with `export-core`). It has
- * no dependency on `@/features/*`, the plugin API or the `opscr` package: callers pass
- * an `opscr/core` workspace, which satisfies `OpscrWorkspaceInput` structurally.
+ * The opscr plugin's own library; the VSCode preview copies it (`sync-shared`). It has no
+ * dependency on `@/features/*`, the plugin API or the `opscr` package: callers pass an
+ * `opscr/core` workspace, which satisfies `OpscrWorkspaceInput` structurally.
  */
 
 export { buildTechnicalView, nodeId } from "./technical-view";
@@ -21,8 +20,7 @@ export {
   providersFor,
 } from "./elements";
 export type { KindGuess } from "./elements";
-export { LEAF_H, LEAF_W, placeView, toLayoutGraph } from "./layout";
-export { previousCoversView, stabilizeLayout } from "./stable-layout";
+export { placeView, placeViewWith } from "./layout";
 export { connectionKeys, toImporterGraph } from "./importer-graph";
 export { SourceIndex } from "./source-index";
 export type { GraphElementRef, LocatedManifestInput, SourceLocation } from "./source-index";
@@ -66,8 +64,8 @@ export type {
   PlacedNode,
   PlacedView,
   ViewBox,
-  ViewLayoutGraph,
   ViewLayoutResult,
+  ViewPlacer,
 } from "./layout";
 export type {
   DroppedEdge,

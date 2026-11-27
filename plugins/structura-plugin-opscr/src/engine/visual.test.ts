@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { importDrawio } from "opscr/import-drawio";
-import { LAYOUT_FILE, VISUAL_FILE, parseVisualFile } from "../generated/opscr-mapping";
+import { LAYOUT_FILE, VISUAL_FILE, parseVisualFile } from "../opscr-mapping";
 import { projectWorkspace } from "../project";
 import type { SourceText } from "./patches";
 import { emptyBinding, type BindingState } from "./sync";
