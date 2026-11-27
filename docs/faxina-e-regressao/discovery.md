@@ -128,7 +128,87 @@ Todo PR de remoção roda `fallow:baseline`, e o diff do baseline só pode encol
 
 ## 8. Quadro Kanban
 
-- Arquivos: `docs/faxina-e-regressao/kanban.html` e `kanban.json`.
+- Arquivos: `docs/faxina-e-regressao/kanban.html` e `kanban.json`, fora do git desde `c3df9a06` (ficam só locais).
 - Artifact: https://claude.ai/artifact/2xviZWvJAhFssP8JrRHoz3
-- Estado final: Fase 3, com 78 cards. São 43 em Backlog, 0 em andamento, 16 aguardando decisão e 19 concluídos (24%).
+- Estado no fim do discovery: Fase 3, com 78 cards. São 43 em Backlog, 0 em andamento, 16 aguardando decisão e 19 concluídos (24%). O estado depois da execução está na seção 9.
 - Conferi que o JSON é válido e que o HTML abre num navegador headless, sem erros de console e sem rolagem horizontal a 390 px.
+
+## 9. Resultado da execução (2026-11-26 e 27)
+
+Executado na branch `chore/faxina-e-regressao`, um commit por item, sem push. Os números abaixo foram medidos no HEAD `a8bc7fc8`, com a máquina sem carga.
+
+### Gates
+
+| Gate | `main` (`b3595158`) | Branch |
+|---|---|---|
+| Testes | 585 arquivos, 5304 testes | 593 arquivos, 5675 testes, 0 `it.fails` |
+| Cobertura de linhas | 69,7% | 74,2% |
+| Cobertura de branches | 60,8% | 64,0% |
+| Cobertura de funções | 64,0% | 68,6% |
+| Cypress no CI | nenhum spec | 4 specs, 87 testes (`cy:run:smoke`) |
+| typecheck, lint, format, build | ok (7 warnings) | ok (os mesmos 7 warnings) |
+| `plugins:sync-check` | 2 plugins | 4 plugins + extensão VSCode |
+| Gate de código morto | fallow com baseline | removido; ficou `cycles:check` |
+
+A suíte tem menos testes do que no pico (5840), porque o `/generate`, o IR e o walkthrough saíram junto com os testes deles. O CI no GitHub Actions ainda não rodou nada disso: Node 24, o job `e2e-smoke`, o typecheck do `observability` e os meta-testes de gate só serão confirmados no primeiro push.
+
+### Cobertura nos arquivos onde as regressões voltavam
+
+| Arquivo ou pasta | Antes | Depois |
+|---|---|---|
+| `canvas/hooks/useCanvasKeyboard.ts` | 0% | 91,5% |
+| `canvas/hooks/useCanvasController.ts` | 0% | 100% |
+| `canvas/hooks/useCanvasEventHandlers.ts` | 48,8% | 79,8% |
+| `canvas/hooks/useCanvasInteraction.ts` | 0% | 43,1% |
+| `persistence/fileSystemBoot.ts` | 38,5% | 63,1% |
+| `persistence/useFileSystemStorage.ts` | 0,9% | 24,1% |
+| `lib/export-service/import-drawio.ts` | 69,6% | 79,7% |
+| `canvas/hooks` (pasta) | 50,4% | 71,7% |
+| `features/collaboration` | 62,7% | 73,0% |
+| `pages/dashboard` | 15,5% | 66,0% |
+| `pages/workspace` | 14,0% | 37,4% |
+
+`Canvas.tsx` (1,6%) e `CanvasContextMenu.tsx` (0%) seguem sem cobertura de vitest: quem os cobre agora são os specs Cypress do CI (seleção, menu de contexto, arestas editáveis e paridade). `features/llm` caiu de 54,7% para 50,2% porque o IR, que era bem testado, saiu.
+
+### O que foi removido
+
+- Gate e baseline de código morto do fallow (64 KB), a pedido do usuário.
+- 8 barrels sem importador, mais o do walkthrough.
+- Cerca de 310 re-exports mortos, cerca de 60 símbolos sem chamador, e o `export` de 94 símbolos de uso interno.
+- 205 chaves de i18n sem uso (169 + 36 de prefixo dinâmico), mais 194 do walkthrough.
+- O comando `/generate` e todo o `src/features/llm/ir`. Os fixtures de layout viraram documentos Diagram, e os baselines de layout foram regravados no caminho real do produto (tabela de antes e depois em `2b7d8404`).
+- O módulo walkthrough inteiro (`4bad604c`). O sufixo `.walkthrough.json` fica, para proteger as pastas dos usuários.
+- A cópia do motor ELK no plugin opscr, que agora chama `api.layout.arrange` do host (API 1.19). A extensão VSCode ainda usa a cópia (DC-073).
+- Docs e specs com referências quebradas, mais os planos de perfil Step Functions.
+
+### Testes de regressão adicionados
+
+Todos foram conferidos quebrando de propósito a correção original: o teste falhou como devia.
+
+- Guarda de histórico: toda ação estrutural do store grava undo, e uma ação nova sem classificação faz o teste falhar.
+- Boot da persistência, corpus de 20 fixtures de import/export, seleção, escopo de atalhos, invariantes de parenting e clipboard (250 cenários).
+- Paridade editor × viewer × embed, direção de leitura em todos os tipos de nó, ações do dashboard e rotas, decisão de fit na abertura.
+- Corridas na colaboração, chunk do LLM com registry vazio, meta-testes dos gates de CI, paridade das opções ELK, correções antigas do FLOW.
+
+### Bugs que os testes acharam na `main`, já corrigidos
+
+| Bug | Commit |
+|---|---|
+| O Structura não reimportava o próprio export AWS para draw.io | `62ef6bfe` |
+| Arquivo draw.io comprimido importava vazio (mais limite de 25 MB na descompressão) | `08d2cb06`, `dfbb8c9c` |
+| Colar painel → painel → nó posicionava o nó longe | `2f18c1c2` |
+| Criar ou duplicar uma versão não tinha undo | `d18046c7` |
+| Mudar a ordem das camadas não tinha undo | `7bdb49de` |
+| Auto-layout disparava com overlay aberto | `0ee04e78` |
+| O highlight da aresta sumia ao clicá-la com um nó selecionado | `44c283e2` |
+| Diagrama legado sem envelope não era migrado | `0ee7d603` |
+| O editor não lembrava mais o último estilo de aresta (desde o #198) | `b5d9842b` |
+| Mensagens de erro do assistente em português no `en.json` | `6f92f71a` |
+| Editor e viewer desenhavam o card com alturas diferentes (desde o #245) | `34197df9` |
+| O cliente da colaboração não validava os patches do relay | `176e2553` |
+
+### Pendente
+
+- Decisões: DC-064 (exports mortos em épicos), DC-071 (exclusão que falha na pasta conectada), RT-039 (a reconexão perde edições não confirmadas), DC-073 (a extensão VSCode ainda usa a cópia do ELK), RT-043 (export de flowchart Mermaid), DC-038 (arquivar 17 openspec changes), DC-033, DC-021 e DC-026.
+- Backlog: RT-042, o `EmbedPreview.test.tsx` que falha com a máquina sobrecarregada.
+- Sem verificação local: o typecheck e os testes do plugin opscr, que dependem do pacote privado `opscr` e só rodam no job do CI com `OPSCR_REPO_TOKEN`.
