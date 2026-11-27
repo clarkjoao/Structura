@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Sync the host's framework-agnostic opscr libraries into this extension, as the single source
- * of truth for how an opscr workspace is drawn and laid out.
+ * Sync the opscr plugin's framework-agnostic projection library into this extension, as the
+ * single source of truth for how an opscr workspace is drawn.
  *
- * Copies every non-test file of `src/lib/opscr-mapping` and `src/lib/opscr-layout` from the
- * host into `src/generated/<name>/` here, verbatim + a DO-NOT-EDIT banner. The extension is a
- * separate esbuild bundle with no `@` alias, so it cannot import the host directly — the
- * same mechanism the LeanIX plugin uses for `export-core`. The folders stay siblings, so the
- * layout's `../opscr-mapping` import resolves the same way here.
+ * Copies every non-test file of `plugins/structura-plugin-opscr/src/opscr-mapping` into
+ * `src/generated/<name>/` here, verbatim + a DO-NOT-EDIT banner. The extension is a separate
+ * esbuild bundle with no `@` alias, so it cannot import the plugin directly — the same mechanism
+ * the LeanIX plugin uses for `export-core`. Layout is not copied: the extension lays out with
+ * Structura's placement through the preview's webview (`STRUCTURA_PLACE`, `src/webview-placer.ts`).
  *
  *   node scripts/sync-shared.mjs          # write the generated files
  *   node scripts/sync-shared.mjs --check  # fail if any is stale
@@ -17,14 +17,14 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const LIBS = ["opscr-mapping", "opscr-layout"];
-const sourceDir = (lib) => resolve(here, "../../../src/lib", lib);
+const LIBS = ["opscr-mapping"];
+const sourceDir = (lib) => resolve(here, "../../../plugins/structura-plugin-opscr/src", lib);
 const targetDir = (lib) => resolve(here, "../src/generated", lib);
 
 const banner = (lib) => `/**
  * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Verbatim copy of the host's src/lib/${lib}, synced via \`npm run sync-shared\`.
- * Edit the host files and re-sync instead of changing this file.
+ * Verbatim copy of plugins/structura-plugin-opscr/src/${lib}, synced via \`npm run sync-shared\`.
+ * Edit the plugin's files and re-sync instead of changing this file.
  */
 `;
 

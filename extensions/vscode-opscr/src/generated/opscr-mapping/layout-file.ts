@@ -1,7 +1,7 @@
 /**
  * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Verbatim copy of the host's src/lib/opscr-mapping, synced via `npm run sync-shared`.
- * Edit the host files and re-sync instead of changing this file.
+ * Verbatim copy of plugins/structura-plugin-opscr/src/opscr-mapping, synced via `npm run sync-shared`.
+ * Edit the plugin's files and re-sync instead of changing this file.
  */
 
 import type { ViewBox, ViewLayoutResult } from "./layout";
@@ -9,7 +9,7 @@ import type { ViewBox, ViewLayoutResult } from "./layout";
 /**
  * The layout sidecar: where each drawn element sits, kept beside the manifests so YAML stays
  * free of coordinates. Keys are view node ids (`Kind/name`); boxes are parent-relative, like a
- * `ViewLayoutResult`, so a parsed sidecar can seed `stabilizeLayout` as it is.
+ * `ViewLayoutResult`, so a parsed sidecar can be handed to `placeViewWith` as what is drawn.
  */
 export const LAYOUT_FILE = "opscr.layout.json";
 

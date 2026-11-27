@@ -1,8 +1,9 @@
 /**
  * opscr Preview — a live, read-only Structura diagram of the opscr workspace of the active
  * `*.opscr.yaml`. The extension host validates the YAML with opscr and turns it into a graph
- * (the technical view, ELK, stable placement); the webview is Structura's embed preview, which
- * draws it — arranged there with Structura's canvas arranger and its references by default
+ * (the technical view, stable placement); the webview is Structura's embed preview, which places
+ * it for the extension with Structura's own placement (`./webview-placer.ts`) and draws it —
+ * arranged there with Structura's canvas arranger and its references by default
  * (`./arrange.ts`), or at the extension's own positions in manual mode. The YAML is edited in VSCode — by the user or Claude Code — never from the diagram.
  * The two point at each other: a click on an element opens the YAML that writes it, and the
  * element the cursor is in is lit in the preview.
@@ -22,6 +23,7 @@ import {
 } from "./arrange";
 import { collectWorkspace, detectWorkspaceRoot, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
+import { WebviewPlacer } from "./webview-placer";
 
 const UPDATE_DELAY_MS = 300;
 /** How long a probe waits for the webview's answer before answering "nothing seen". */
@@ -44,13 +46,19 @@ interface WebviewMessage {
   arranged?: boolean;
   element?: GraphElementRef;
   index?: number;
+  /** STRUCTURA_PLACE_RESULT: which request it answers, and its boxes or error. */
+  id?: number;
+  boxes?: unknown;
+  error?: string;
 }
 
 /** The label of the whole-workspace picture in the view picker. */
 const WHOLE_WORKSPACE = "Whole workspace";
 
 class Preview {
-  private readonly pipeline = new PreviewPipeline();
+  /** Structura's placement, in the webview: the extension has none of its own. */
+  private readonly placer: WebviewPlacer;
+  private readonly pipeline: PreviewPipeline;
   private timer: NodeJS.Timeout | undefined;
   private ready = false;
   private rendered = 0;
@@ -97,6 +105,11 @@ class Preview {
     private readonly diagnostics: vscode.DiagnosticCollection,
     private readonly state?: vscode.Memento,
   ) {
+    this.placer = new WebviewPlacer(
+      (message) => void panel.webview.postMessage(message),
+      () => arrangeMessage(this.arrange),
+    );
+    this.pipeline = new PreviewPipeline(this.placer);
     this.arrange = readArrangeSettings(state?.get(this.arrangeKey));
     this.arrangeItem.command = "opscr.arrangePreview";
     this.showArrange();
@@ -109,6 +122,10 @@ class Preview {
 
   /** A message from the webview (or, for the end-to-end test, one posed as it). */
   async receive(message: WebviewMessage): Promise<void> {
+    if (message?.type === "STRUCTURA_PLACE_RESULT") {
+      this.placer.receive(message);
+      return;
+    }
     if (message?.type === "STRUCTURA_RENDERED") {
       this.rendered = message.nodes ?? 0;
       this.arrangedRendered = message.arranged === true;
@@ -135,6 +152,7 @@ class Preview {
     }
     if (message?.type !== "STRUCTURA_READY") return;
     this.ready = true;
+    this.placer.ready();
     this.postTheme();
     if (this.lastGraph) this.postGraph();
     if (this.lastBlocked) this.post(this.lastBlocked);
@@ -155,14 +173,19 @@ class Preview {
 
   schedule(): void {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.update(), UPDATE_DELAY_MS);
+    this.timer = setTimeout(() => this.refresh(), UPDATE_DELAY_MS);
   }
 
   /** Lays the picture out from scratch: the stable placement, and the embed's arrangement. */
   relayout(): void {
     this.pipeline.relayout(this.view);
     if (this.arrange.mode === "automatic") this.postArrange();
-    void this.update();
+    this.refresh();
+  }
+
+  /** Runs an update; one that fails (the webview never answered a layout) is logged. */
+  private refresh(): void {
+    this.update().catch((error: unknown) => console.error("[opscr] preview:", error));
   }
 
   private get arrangeKey(): string {
@@ -251,7 +274,7 @@ class Preview {
     if (view === this.view) return;
     this.view = view;
     this.selected = null;
-    void this.update();
+    this.refresh();
   }
 
   /** The picker: the whole workspace, each view, and the views the picture's boxes open. */
@@ -336,6 +359,7 @@ class Preview {
   dispose(): void {
     clearTimeout(this.timer);
     this.ready = false;
+    this.placer.dispose();
     for (const resolve of this.probes.splice(0)) resolve(PROBE_UNANSWERED);
     // Nothing keeps these up to date once the preview is gone.
     for (const file of this.published) this.diagnostics.delete(vscode.Uri.file(file));

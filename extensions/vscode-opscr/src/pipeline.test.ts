@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, win32 } from "node:path";
 import { createRequire } from "node:module";
-import { connectionKeys } from "./generated/opscr-mapping";
+import { connectionKeys, type ViewPlacer } from "./generated/opscr-mapping";
+import { hostEngine } from "./host-engine.test-support";
 import {
   collectWorkspace,
   detectWorkspaceRoot,
@@ -103,9 +104,24 @@ describe("a workspace in subfolders", () => {
     expect(paths).toContain("/w/views/shop-context.opscr.yaml");
   });
 
+  it("hands Structura each connection's label, the text the preview draws on it", async () => {
+    const workspace = await collectWorkspace("/w", NAMES_NESTED, readNested);
+    const seen: Array<{ label?: string }> = [];
+    const engine = hostEngine();
+    const spy: ViewPlacer = {
+      place: (input) => {
+        seen.push(...input.graph.connections);
+        return engine.place(input);
+      },
+    };
+    const { graph } = await new PreviewPipeline(spy).update(workspace);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.map((e) => e.label).sort()).toEqual(graph!.connections.map((c) => c.label).sort());
+  });
+
   it("draws the whole workspace, not just the file's own folder", async () => {
     const workspace = await collectWorkspace("/w", NAMES_NESTED, readNested);
-    const { graph, blocked, sources } = await new PreviewPipeline().update(workspace);
+    const { graph, blocked, sources } = await new PreviewPipeline(hostEngine()).update(workspace);
     expect(blocked).toBeUndefined();
     expect(graph!.components.map((c) => c.key)).toContain("Application/orders-api");
     expect(sources!.locate({ kind: "component", key: "Application/orders-api" })?.file).toBe(
@@ -160,7 +176,7 @@ describe("views in the preview", () => {
     graph?.components.map((c) => c.key).sort();
 
   it("lists the views and draws the whole workspace by default", async () => {
-    const update = await new PreviewPipeline().update(await workspace());
+    const update = await new PreviewPipeline(hostEngine()).update(await workspace());
     expect(update.views?.sort()).toEqual([
       "orders-api-components",
       "shop-containers",
@@ -173,7 +189,10 @@ describe("views in the preview", () => {
   });
 
   it("draws one view, with the boxes that open another", async () => {
-    const update = await new PreviewPipeline().update(await workspace(), "shop-context");
+    const update = await new PreviewPipeline(hostEngine()).update(
+      await workspace(),
+      "shop-context",
+    );
     expect(update.view).toBe("shop-context");
     expect(keys(update.graph)).toEqual([
       "BoundedContext/webshop",
@@ -184,13 +203,16 @@ describe("views in the preview", () => {
   });
 
   it("falls back to the whole workspace when the view is gone", async () => {
-    const update = await new PreviewPipeline().update(await workspace(), "no-such-view");
+    const update = await new PreviewPipeline(hostEngine()).update(
+      await workspace(),
+      "no-such-view",
+    );
     expect(update.view).toBeUndefined();
     expect(keys(update.graph)).toContain("BoundedContext/webshop");
   });
 
   it("keeps a picture per diagram, so going away and back changes nothing", async () => {
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     const ws = await workspace();
     const first = await pipeline.update(ws, "shop-containers");
     await pipeline.update(ws, "shop-context");
@@ -210,10 +232,13 @@ describe("views in the preview", () => {
         },
       },
     });
-    const update = await new PreviewPipeline().update(await workspace(layout), "shop-context");
+    const update = await new PreviewPipeline(hostEngine()).update(
+      await workspace(layout),
+      "shop-context",
+    );
     expect(boxesOf(update.graph!).get("BoundedContext/webshop")).toEqual([700, 300]);
     // The other diagrams ignore it.
-    const whole = await new PreviewPipeline().update(await workspace(layout));
+    const whole = await new PreviewPipeline(hostEngine()).update(await workspace(layout));
     expect(boxesOf(whole.graph!).get("BoundedContext/webshop")).not.toEqual([700, 300]);
   });
 
@@ -233,10 +258,10 @@ describe("views in the preview", () => {
       edges: [],
     });
     const ws = { ...(await workspace()), visual };
-    expect(keys((await new PreviewPipeline().update(ws)).graph)).toContain("drawio:1");
-    expect(keys((await new PreviewPipeline().update(ws, "shop-context")).graph)).not.toContain(
-      "drawio:1",
-    );
+    expect(keys((await new PreviewPipeline(hostEngine()).update(ws)).graph)).toContain("drawio:1");
+    expect(
+      keys((await new PreviewPipeline(hostEngine()).update(ws, "shop-context")).graph),
+    ).not.toContain("drawio:1");
   });
 });
 
@@ -369,7 +394,9 @@ describe("on Windows", () => {
     );
     const commerce = `${folder}\\commerce.opscr.yaml`;
     expect(workspace.files.map((f) => f.path)).toContain(commerce);
-    const { graph, sources, diagnostics } = await new PreviewPipeline().update(workspace);
+    const { graph, sources, diagnostics } = await new PreviewPipeline(hostEngine()).update(
+      workspace,
+    );
     expect(graph).toBeDefined();
     for (const d of diagnostics) if (d.file) expect(d.file.startsWith(`${folder}\\`)).toBe(true);
     const line =
@@ -388,7 +415,7 @@ describe("on Windows", () => {
 
 describe("PreviewPipeline", () => {
   it("draws the multi-file sample: panels from one file, edges from another", async () => {
-    const { graph, diagnostics } = await new PreviewPipeline().update(await sample());
+    const { graph, diagnostics } = await new PreviewPipeline(hostEngine()).update(await sample());
     expect(diagnostics.filter((d) => d.severity === "error")).toEqual([]);
     const keys = graph!.components.map((c) => c.key);
     expect(keys).toEqual(
@@ -402,7 +429,7 @@ describe("PreviewPipeline", () => {
   });
 
   it("knows where each element is written, and which element a line writes", async () => {
-    const { graph, sources } = await new PreviewPipeline().update(await sample());
+    const { graph, sources } = await new PreviewPipeline(hostEngine()).update(await sample());
     const lineOf = (file: string, pattern: RegExp) =>
       readFileSync(join(SAMPLE_DIR, file), "utf8")
         .split("\n")
@@ -428,7 +455,7 @@ describe("PreviewPipeline", () => {
   });
 
   it("keeps every element in place when one is added", async () => {
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     const before = boxesOf((await pipeline.update(await sample())).graph!);
     const after = boxesOf(
       (await pipeline.update(await edited("relationships.opscr.yaml", (t) => t + CACHE))).graph!,
@@ -438,7 +465,7 @@ describe("PreviewPipeline", () => {
   });
 
   it("moves nothing when only a description changes", async () => {
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     const before = boxesOf((await pipeline.update(await sample())).graph!);
     const after = boxesOf(
       (
@@ -453,7 +480,7 @@ describe("PreviewPipeline", () => {
   });
 
   it("posts nothing while the YAML does not parse, and reports why", async () => {
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     await pipeline.update(await sample());
     const broken: WorkspaceText = await edited("shared.opscr.yaml", (t) => t + "\nkind: [");
     const result = await pipeline.update(broken);
@@ -462,8 +489,8 @@ describe("PreviewPipeline", () => {
   });
 
   it("reports schema errors on their file and line, and draws everything but the broken element", async () => {
-    const whole = await new PreviewPipeline().update(await sample());
-    const result = await new PreviewPipeline().update(
+    const whole = await new PreviewPipeline(hostEngine()).update(await sample());
+    const result = await new PreviewPipeline(hostEngine()).update(
       await edited("finance.opscr.yaml", (t) =>
         t.replace(/(\n\s+description:)/, "\n  inventedField: 1$1"),
       ),
@@ -480,7 +507,7 @@ describe("PreviewPipeline", () => {
   });
 
   it("still keeps the last picture while the YAML does not parse", async () => {
-    const result = await new PreviewPipeline().update(
+    const result = await new PreviewPipeline(hostEngine()).update(
       await edited("finance.opscr.yaml", (t) => t + "\n  : : [unclosed"),
     );
     expect(result.graph).toBeUndefined();
@@ -489,7 +516,7 @@ describe("PreviewPipeline", () => {
 
   it("runs overlapping updates one after another, each from the picture before it", async () => {
     compiling.most = 0;
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     const [first, second] = await Promise.all([
       pipeline.update(await sample()),
       pipeline.update(await edited("relationships.opscr.yaml", (t) => t + CACHE)),
@@ -501,7 +528,7 @@ describe("PreviewPipeline", () => {
   });
 
   it("lays everything out again after relayout()", async () => {
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     const first = boxesOf((await pipeline.update(await sample())).graph!);
     pipeline.relayout();
     const again = boxesOf((await pipeline.update(await sample())).graph!);
@@ -529,7 +556,7 @@ describe("layout sidecar", () => {
   });
 
   it("draws elements at their sidecar box, others by the stable layout", async () => {
-    const { graph } = await new PreviewPipeline().update(
+    const { graph } = await new PreviewPipeline(hostEngine()).update(
       await withSidecar(sidecarOf({ "Database/orders-db": { x: 900, y: 300 } })),
     );
     const db = graph!.components.find((c) => c.key === "Database/orders-db")!;
@@ -537,7 +564,7 @@ describe("layout sidecar", () => {
   });
 
   it("re-applies a changed sidecar, and ignores an unchanged one after relayout()", async () => {
-    const pipeline = new PreviewPipeline();
+    const pipeline = new PreviewPipeline(hostEngine());
     const first = await withSidecar(sidecarOf({ "Database/orders-db": { x: 900, y: 300 } }));
     await pipeline.update(first);
     const moved = await pipeline.update(
@@ -586,7 +613,7 @@ describe("visual layer", () => {
       async (p) => out.find((f) => `/w/${f.path}` === p)?.content,
     );
     expect(workspace.visual).toBeDefined();
-    const { graph } = await new PreviewPipeline().update(workspace);
+    const { graph } = await new PreviewPipeline(hostEngine()).update(workspace);
     expect(graph!.components.find((c) => c.name === "AWS Cloud")).toMatchObject({ type: "panel" });
     expect(graph!.components.some((c) => c.cloudServiceId === "cloudwatch")).toBe(true);
     expect(
@@ -611,7 +638,7 @@ describe("a product workspace", () => {
   it("draws the AS-IS root: the initiatives are overlays, not part of it", async () => {
     const text = await collectWorkspace(PRODUCT_DIR, names(PRODUCT_DIR), fromProduct);
     expect(text.files.some((f) => /[\\/]initiatives[\\/]/.test(f.path))).toBe(false);
-    const update = await new PreviewPipeline().update(text);
+    const update = await new PreviewPipeline(hostEngine()).update(text);
     expect(update.diagnostics.filter((d) => d.severity === "error")).toEqual([]);
     expect(update.graph).toBeDefined();
   });

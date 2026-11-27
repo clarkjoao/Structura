@@ -19,17 +19,15 @@ import {
   overlayLayouts,
   parseLayoutFiles,
   placeView,
-  previousCoversView,
-  stabilizeLayout,
+  placeViewWith,
   toImporterGraph,
-  toLayoutGraph,
   parseVisualFile,
   withVisualLayer,
   withoutBroken,
   type ImporterGraph,
+  type ViewPlacer,
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
-import { layoutView } from "./generated/opscr-layout";
 
 /** opscr files of a workspace and its config, as text. */
 export interface WorkspaceText {
@@ -67,11 +65,14 @@ const PARSE_ERROR = "loader/yaml-parse-error";
 
 /**
  * YAML text → the graph the preview draws, keeping the previous picture still: every
- * element that survives an edit keeps its place (`stabilizeLayout`), new ones are laid out
- * next to their neighbours. An element opscr reports an error in is left out (`withoutBroken`) and
+ * element that survives an edit keeps its place, new ones go beside what they connect to
+ * (`placeViewWith`, Structura's placement). An element opscr reports an error in is left out (`withoutBroken`) and
  * the rest is drawn — one manifest written without a required field (by hand, or from a canvas)
  * must not freeze the preview; the errors stay in the Problems panel. Only YAML that does not
  * parse keeps the last picture. No VSCode API here, so the whole path is unit-testable.
+ *
+ * Placement is Structura's, handed in (`placer`): the extension passes the webview's
+ * (`WebviewPlacer`), tests pass `api.layout`'s implementation itself. There is no other.
  */
 export class PreviewPipeline {
   /** The picture on screen, per diagram: the whole workspace's ("") and each View's. */
@@ -80,6 +81,8 @@ export class PreviewPipeline {
   private sidecar: string | undefined;
   /** Updates run one at a time: each builds on the picture the one before left. */
   private queue: Promise<unknown> = Promise.resolve();
+
+  constructor(private readonly placer: ViewPlacer) {}
 
   /**
    * Forget the current picture: the next update lays everything out from scratch, ignoring
@@ -129,11 +132,8 @@ export class PreviewPipeline {
     const view = resolved ? buildViewDiagram(drawable, resolved) : buildTechnicalView(drawable);
     const key = drawn ?? "";
     const previous = this.pictures.get(key);
-    // An edit of text alone moves nothing: the layout engine would only be ignored.
-    const fresh = previousCoversView(view, previous)
-      ? { boxes: new Map(), edgeRoutes: new Map() }
-      : await layoutView(toLayoutGraph(view), previous?.boxes);
-    const stable = stabilizeLayout(view, fresh, previous);
+    // Structura places it: what is drawn stays, each new element goes beside what it connects to.
+    const stable = await placeViewWith(this.placer, view, previous);
     this.pictures.set(key, stable);
     const graph = toImporterGraph(placeView(view, stable));
     const links = new Map(
