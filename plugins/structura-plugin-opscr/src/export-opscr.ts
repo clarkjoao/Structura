@@ -1,5 +1,5 @@
 import { compileSources, Severity } from "opscr/core";
-import { kindFor } from "./generated/opscr-mapping";
+import { kindFor } from "./opscr-mapping";
 import { manifestSource, slugName } from "./engine/adopt";
 import { getSession } from "./session";
 import type { DiagramSnapshot, ExporterContribution } from "./types/plugin.types";

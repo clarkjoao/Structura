@@ -130,7 +130,8 @@ export class ViewDiagrams {
           return state.set({ ...current, bindings: { ...current.bindings, [diagramId]: binding } });
         },
       },
-      project: (manifests, config, previous) => project(manifests, config, previous, view),
+      project: (manifests, config, previous, _view, diagramId) =>
+        project(manifests, config, previous, view, diagramId),
       isManifest,
       configFile,
       resolveLink: (target) => this.diagramFor(target),

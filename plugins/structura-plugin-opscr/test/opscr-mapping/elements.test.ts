@@ -4,9 +4,9 @@ import { AWS_CATEGORIES } from "@/features/cloud/providers/aws/aws.catalog";
 import { AZURE_CATEGORIES } from "@/features/cloud/providers/azure/azure.catalog";
 import { GCP_CATEGORIES } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { OSS_CATEGORIES } from "@/features/elements/families/oss/oss.catalog";
-import { PROVIDER_SERVICES, elementFor, kindFor } from "./elements";
+import { PROVIDER_SERVICES, elementFor, kindFor } from "../../src/opscr-mapping/elements";
 
-const HERE = __dirname;
+const HERE = `${__dirname}/../../src/opscr-mapping`;
 
 const manifest = (kind: string, spec: Record<string, unknown> = {}) => ({
   kind,
@@ -20,7 +20,7 @@ describe("opscr-mapping is framework-agnostic", () => {
     expect(files.length).toBeGreaterThan(3);
     for (const f of files) {
       const src = readFileSync(`${HERE}/${f}`, "utf8");
-      // Plugins copy this folder verbatim (sync-shared) and have no `@` alias.
+      // The VSCode extension copies this folder verbatim (sync-shared) and has no `@` alias.
       expect(src, `${f} must only use relative imports`).not.toMatch(/from\s+["']@\//);
       expect(src, `${f} must not import opscr`).not.toMatch(/from\s+["']opscr/);
       expect(src, `${f} must not reference plugin.types`).not.toMatch(/plugin\.types/);

@@ -1,14 +1,14 @@
 import type { PluginLayout } from "./types/plugin.types";
-import type { ViewBox, ViewLayoutGraph, ViewLayoutResult } from "./generated/opscr-mapping";
+import { placeViewWith, type TechnicalView, type ViewLayoutResult } from "./opscr-mapping";
 
 /**
- * The layout engine is the host's (`api.layout`, API 1.19): the plugin bundles none. `activate`
- * hands it over before anything can project a workspace; tests install the host engine through
- * `test/host-layout.setup.ts`.
+ * Placement is the host's (`api.layout.place`, API 1.21): the plugin neither sizes nor
+ * positions anything. `activate` hands the host's layout over before anything can project a
+ * workspace; tests install the host's own implementation through `test/host-layout.setup.ts`.
  */
 let engine: PluginLayout | undefined;
 
-/** Installs the engine; returns the one it replaces. */
+/** Installs the host's layout; returns the one it replaces. */
 export function setHostLayout(layout: PluginLayout): PluginLayout | undefined {
   const previous = engine;
   engine = layout;
@@ -16,24 +16,20 @@ export function setHostLayout(layout: PluginLayout): PluginLayout | undefined {
 }
 
 /**
- * Lays out the view's graph with the host's engine and returns each node's box relative to its
- * parent. Edge routes are not returned: the canvas routes connections itself.
- *
- * `seed` — boxes from a previous layout, by node id — is handed over as the nodes' positions, so
- * the engine keeps the drawn order; feed the result to `stabilizeLayout` to keep surviving nodes
- * exactly in place.
+ * The view placed by Structura (`placeViewWith`): arranged as the canvas's Arrange when nothing is
+ * drawn, else kept where it is drawn with each new element placed as the canvas's automatic mode
+ * places it. `diagramId` names the diagram it is for — its reading direction and Arrange settings.
  */
-export async function layoutView(
-  graph: ViewLayoutGraph,
-  seed?: ReadonlyMap<string, ViewBox>,
+export async function placeWorkspaceView(
+  view: TechnicalView,
+  previous?: ViewLayoutResult,
+  diagramId?: string,
 ): Promise<ViewLayoutResult> {
-  if (!engine) throw new Error("[opscr] the host's layout engine is not set: activate first");
-  const { boxes } = await engine.arrange({
-    nodes: graph.nodes.map((node) => {
-      const at = seed?.get(node.id);
-      return at ? { ...node, position: { x: at.x, y: at.y } } : node;
-    }),
-    edges: graph.edges,
-  });
-  return { boxes: new Map(Object.entries(boxes)), edgeRoutes: new Map() };
+  const host = engine;
+  if (!host) throw new Error("[opscr] the host's layout is not set: activate first");
+  return placeViewWith(
+    { place: (input) => host.place({ ...input, ...(diagramId && { diagramId }) }) },
+    view,
+    previous,
+  );
 }

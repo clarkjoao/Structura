@@ -1,6 +1,6 @@
 import { compileSources } from "opscr/core";
 import { describe, expect, it } from "vitest";
-import { DRAWN_KINDS } from "../generated/opscr-mapping";
+import { DRAWN_KINDS } from "../opscr-mapping";
 import { manifestSource } from "./adopt";
 
 const errorsOf = async (text: string) => {

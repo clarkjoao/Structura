@@ -188,8 +188,8 @@ export function layoutWithSettings(
  * ELK's interactive strategies: layers, the order within them and the placement are read from
  * each node's `position` instead of chosen afresh. Measured on the canvas's own inserts they
  * did not keep a picture stiller (`autoArrangeStability.experiment`), so the canvas does not
- * use them; a host that pins survivors itself (the opscr plugin's `stabilizeLayout`) uses them
- * only to keep the new elements' layout close to the drawn one.
+ * use them; `api.layout.arrange` (plugin API 1.19) uses them when a plugin hands over positions,
+ * to keep its layout close to what it drew.
  */
 const ELK_OPTIONS_KEEP_ORDER: Record<string, string> = {
   "elk.layered.layering.strategy": "INTERACTIVE",

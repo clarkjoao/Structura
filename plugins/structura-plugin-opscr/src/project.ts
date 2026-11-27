@@ -6,16 +6,13 @@ import {
   buildViewDiagram,
   isManifestName,
   placeView,
-  previousCoversView,
-  stabilizeLayout,
   toImporterGraph,
-  toLayoutGraph,
   type DroppedEdge,
   type ImporterGraph,
   type OmittedManifest,
   type ViewLayoutResult,
-} from "./generated/opscr-mapping";
-import { layoutView } from "./layout";
+} from "./opscr-mapping";
+import { placeWorkspaceView } from "./layout";
 import type { Projector, ViewInfo } from "./engine/engine";
 
 export interface Projection {
@@ -46,6 +43,8 @@ export async function projectWorkspace(
   files: SourceFile[],
   config: SourceFile | undefined,
   previous: ViewLayoutResult | undefined,
+  /** The diagram it is for: its reading direction and Arrange settings. */
+  diagramId?: string,
 ): Promise<Projection> {
   const { workspace, result } = await compileSources(config ? { files, config } : { files });
   if (result.diagnostics.some((d) => d.ruleId === "loader/yaml-parse-error")) {
@@ -55,11 +54,9 @@ export async function projectWorkspace(
   const viewInfos = viewInfosOf(workspace);
   const views = viewInfos.map((v) => v.name);
   const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
-  // An edit of text alone moves nothing: the layout engine would only be ignored.
-  const fresh = previousCoversView(view, seeded)
-    ? { boxes: new Map(), edgeRoutes: new Map() }
-    : await layoutView(toLayoutGraph(view), seeded?.boxes);
-  const stable = stabilizeLayout(view, fresh, seeded);
+  // Structura places it: an edit of text alone moves nothing, a new element goes beside what it
+  // is connected to.
+  const stable = await placeWorkspaceView(view, seeded, diagramId);
   // A first sync is anchored at ORIGIN; later ones keep the canvas's own coordinates.
   return {
     diagnostics: result.diagnostics,
@@ -111,6 +108,7 @@ export async function projectView(
   config: SourceFile | undefined,
   viewName: string,
   previous?: ViewLayoutResult,
+  diagramId?: string,
 ): Promise<ViewProjection> {
   const { workspace, result } = await compileSources(config ? { files, config } : { files });
   const viewInfos = viewInfosOf(workspace);
@@ -122,10 +120,7 @@ export async function projectView(
   if (!resolved) return { diagnostics: result.diagnostics, views, viewInfos };
   const view = buildViewDiagram(workspace, resolved);
   const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
-  const fresh = previousCoversView(view, seeded)
-    ? { boxes: new Map(), edgeRoutes: new Map() }
-    : await layoutView(toLayoutGraph(view), seeded?.boxes);
-  const stable = stabilizeLayout(view, fresh, seeded);
+  const stable = await placeWorkspaceView(view, seeded, diagramId);
   return {
     diagnostics: result.diagnostics,
     views,
@@ -135,11 +130,11 @@ export async function projectView(
 }
 
 /** `projectWorkspace`, or `projectView` when a View is asked for, as the engine calls it (file name + text). */
-export const projector = (async (manifests, config, previous, view) => {
+export const projector = (async (manifests, config, previous, view, diagramId) => {
   const files = manifests.map((f) => ({ path: f.name, content: f.text }));
   const configFile = config ? { path: config.name, content: config.text } : undefined;
-  if (view === undefined) return projectWorkspace(files, configFile, previous);
-  const projected = await projectView(files, configFile, view, previous);
+  if (view === undefined) return projectWorkspace(files, configFile, previous, diagramId);
+  const projected = await projectView(files, configFile, view, previous, diagramId);
   // Edits are a no-op in a View, so the source index and the dropped lists stay empty.
   return { ...projected, views: projected.views };
 }) satisfies Projector;

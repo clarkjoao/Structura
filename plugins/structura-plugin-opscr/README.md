@@ -75,9 +75,9 @@ panels, technical Kinds as their AWS / GCP / Azure / OSS catalog components, flo
 connections labelled with their type. Kinds left out of the view, edges not drawn and opscr
 validation errors come back as import warnings.
 
-How the workspace is drawn is decided by the host's `src/lib/opscr-mapping` (copied in by
-`sync-shared`); this plugin only parses, lays out with the host's engine (`api.layout.arrange`,
-plugin API `^1.19`) and hands the result to the importer API.
+How the workspace is drawn is decided by this plugin's `src/opscr-mapping` (the VSCode extension
+copies it from here); the plugin parses and projects; Structura sizes and places the result (`api.layout.place`,
+plugin API `^1.21`), which goes to the importer API.
 
 ## Build
 
@@ -114,9 +114,9 @@ folder-binding work, not to this plugin.
 ## Keeping it in sync
 
 - `npm run sync-types` — the host plugin API types (`src/types/plugin.types.ts`).
-- `npm run sync-shared` — the host projection (`src/generated/opscr-mapping`).
-- Layout is not copied: the plugin lays out with the host's engine through `api.layout` (API 1.19),
-  and its tests use the host's implementation of it (`test/host-layout.setup.ts`).
+- Placement is not copied: the plugin is placed by the host through `api.layout.place` (API 1.21),
+  and its tests use the host's implementation of it, in the host's own test environment
+  (`test/host-layout.setup.ts`).
 
 Neither runs in CI: this plugin depends on an unpublished package.
 

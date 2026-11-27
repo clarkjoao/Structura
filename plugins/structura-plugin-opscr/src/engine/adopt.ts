@@ -1,4 +1,4 @@
-import { elementFor } from "../generated/opscr-mapping";
+import { elementFor } from "../opscr-mapping";
 import {
   addEdge,
   elementSource,

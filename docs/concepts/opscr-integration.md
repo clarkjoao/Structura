@@ -22,8 +22,8 @@ Structura edits the YAML only as text patches. Positions live in a sidecar file,
 | Where | What |
 | --- | --- |
 | `~/www/opscr` | The opscr engine. `schemas/opscr.dev/v1/*.schema.yaml` (source of truth for Kinds), `src/kernel` (= `opscr/core`, browser-safe), CLI `opscr compile <dir>`, `opscr import drawio`, `opscr mcp`, the `opscr-architect` skill. Examples: `examples/sample`, `examples/web-app-aws`. Linked into Structura with `npm link opscr`, not from npm. |
-| `src/lib/opscr-mapping` | Pure projection YAML → Structura graph (technical view, view diagrams, layout file, visual layer, `withoutBroken`). No `@/` imports and no `opscr` import. Copied into the plugin and the extension by `sync-shared`. |
-| `src/lib/opscr-layout` | ELK layout runner for the VSCode extension only (its manual arrange mode, in the Node extension host), copied there by `sync-shared`. The plugin does not use it: it lays out with the host's engine through `api.layout` (API 1.19). |
+| `plugins/structura-plugin-opscr/src/opscr-mapping` | Pure projection YAML → Structura graph (technical view, view diagrams, layout file, visual layer, `withoutBroken`). The plugin's own code: no `@/` imports and no `opscr` import, so the extension can copy it (`sync-shared`). The app does not import it. |
+| `src/features/canvas/layout` | **The only layout engine and placement** (ELK, the Arrange, the automatic mode's incremental placement, sizes by type). The plugin is placed through `api.layout.place` (API 1.21, `src/features/plugins/plugin-place.ts`); the VSCode extension through its webview, which answers `STRUCTURA_PLACE` with the same implementation (`src/embed/place-request.ts`). opscr decides what is drawn, Structura where and how big. No channel bundles ELK: `singleEngine.guard.test.ts` fails the suite if one does. |
 | `plugins/structura-plugin-opscr` | The Structura plugin: importer, the **opscr document pane**, the bidirectional engine, the chat context. It bundles `opscr/core`; layout is the host's engine (`api.layout.arrange`). |
 | `extensions/vscode-opscr` | The VSCode preview: a read-only picture beside the YAML, plus problems in the Problems panel. It loads `dist-embed` (`npm run build:embed`). |
 
@@ -99,7 +99,6 @@ node dist/cli/index.js compile examples/web-app-aws
 
 # plugin (plugins/structura-plugin-opscr)
 npm link opscr                       # again after every npm install
-npm run sync-shared                  # after touching src/lib/opscr-mapping
 npm run typecheck && npm test
 # then at the root: build the app with the plugin, run the e2e
 npm run build:plugins -- --no-build structura-plugin-opscr
@@ -109,14 +108,14 @@ node e2e/pane.mjs && node e2e/views.mjs
 npm run dev:plugins -- opscr
 
 # VSCode extension (extensions/vscode-opscr)
-npm run sync-shared && npm test
+npm run sync-shared && npm test      # after touching the plugin's src/opscr-mapping
 npm run package                      # .vsix (needs `npm run build:embed` at the root first)
 ```
 
 ## Rules that bite
 
-- `opscr-mapping` stays framework-agnostic: relative imports only, never throws. Edit it in
-  `src/lib`, then run `sync-shared` in **both** the plugin and the extension.
+- `opscr-mapping` stays framework-agnostic: relative imports only, never throws. Edit it in the
+  plugin (`src/opscr-mapping`), then run `sync-shared` in the extension.
 - The plugin API types are copied too (`npm run sync-types`). A new host capability means bumping
   the plugin API version (`src/features/plugins/plugin.types.ts`) and the plugin manifest's
   `apiVersion`.

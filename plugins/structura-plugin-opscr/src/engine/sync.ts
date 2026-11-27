@@ -3,15 +3,13 @@ import type {
   ImporterGraphComponent,
   ViewBox,
   ViewLayoutResult,
-} from "../generated/opscr-mapping";
+} from "../opscr-mapping";
 import {
-  LEAF_H,
-  LEAF_W,
   connectionKeys as importerConnectionKeys,
   layoutFor,
   overlayLayouts,
   updateLayoutFile,
-} from "../generated/opscr-mapping";
+} from "../opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginDiagramChanges,
@@ -21,7 +19,6 @@ import type { EdgeSource } from "./patches";
 import { canvasAbsolute, isVisualKey } from "./visual";
 
 /** Default leaf size when the canvas has not measured one. */
-const LEAF = { width: LEAF_W, height: LEAF_H };
 
 /**
  * What the plugin remembers about a bound diagram, between syncs and sessions: the
@@ -110,8 +107,9 @@ export function canvasLayout(binding: BindingState, diagram: DiagramSnapshot): V
     boxes.set(key, {
       x,
       y,
-      width: component.size?.width ?? LEAF.width,
-      height: component.size?.height ?? LEAF.height,
+      // 0: not known — Structura sizes it as the canvas draws its type (`api.layout.place`).
+      width: component.size?.width ?? 0,
+      height: component.size?.height ?? 0,
     });
     // Positions are relative to the canvas parent; one outside the binding has no key.
     parents.set(key, parentId ? (keyOfId.get(parentId) ?? `#${parentId}`) : null);

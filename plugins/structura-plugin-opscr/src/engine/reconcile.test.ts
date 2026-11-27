@@ -6,7 +6,7 @@ import { reconcile, renameInBinding } from "./reconcile";
 import { addElementsToYaml, slugName } from "./adopt";
 import { emptyBinding, sidecarText, type BindingState } from "./sync";
 import { OpscrEngine, type EngineOptions } from "./engine";
-import { LAYOUT_FILE } from "../generated/opscr-mapping";
+import { LAYOUT_FILE } from "../opscr-mapping";
 import { FakeCanvas } from "./fake-canvas.fixture";
 import type { PluginComponentSnapshot, PluginDiagramChanges } from "../types/plugin.types";
 

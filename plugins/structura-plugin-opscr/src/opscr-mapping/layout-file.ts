@@ -3,7 +3,7 @@ import type { ViewBox, ViewLayoutResult } from "./layout";
 /**
  * The layout sidecar: where each drawn element sits, kept beside the manifests so YAML stays
  * free of coordinates. Keys are view node ids (`Kind/name`); boxes are parent-relative, like a
- * `ViewLayoutResult`, so a parsed sidecar can seed `stabilizeLayout` as it is.
+ * `ViewLayoutResult`, so a parsed sidecar can be handed to `placeViewWith` as what is drawn.
  */
 export const LAYOUT_FILE = "opscr.layout.json";
 

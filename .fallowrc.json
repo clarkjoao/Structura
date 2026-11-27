@@ -7,8 +7,7 @@
     "plugins/*/e2e/*.mjs",
     "extensions/*/e2e/*.cjs",
     "src/embed/NoMonacoEditor.tsx",
-    "src/lib/opscr-layout/index.ts",
-    "src/lib/opscr-mapping/index.ts"
+    "src/features/plugins/connection-keys.ts"
   ],
   "ignorePatterns": ["**/generated/**"],
   "ignoreDependencies": ["@vscode/vsce"]

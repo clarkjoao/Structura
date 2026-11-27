@@ -42,7 +42,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "cycles:check": "npx --yes fallow@3.33.1 architecture --fail-on-issues --quiet",
-    "plugins:sync-check": "node plugins/structura-plugin-leanix/scripts/sync-types.mjs --check && node plugins/structura-plugin-leanix/scripts/sync-shared.mjs --check && node plugins/structura-plugin-example-ui/scripts/sync-types.mjs --check && node plugins/structura-plugin-opscr/scripts/sync-types.mjs --check && node plugins/structura-plugin-opscr/scripts/sync-shared.mjs --check && node plugins/structura-plugin-observability/scripts/sync-types.mjs --check && node extensions/vscode-opscr/scripts/sync-shared.mjs --check",
+    "plugins:sync-check": "node plugins/structura-plugin-leanix/scripts/sync-types.mjs --check && node plugins/structura-plugin-leanix/scripts/sync-shared.mjs --check && node plugins/structura-plugin-example-ui/scripts/sync-types.mjs --check && node plugins/structura-plugin-opscr/scripts/sync-types.mjs --check && node plugins/structura-plugin-observability/scripts/sync-types.mjs --check && node extensions/vscode-opscr/scripts/sync-shared.mjs --check",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

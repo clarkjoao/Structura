@@ -4,7 +4,7 @@
   "version": "0.17.0",
   "author": "Structura",
   "description": "Import and export opscr manifests, or edit a folder of them beside a diagram that follows",
-  "apiVersion": "^1.19",
+  "apiVersion": "^1.21",
   "capabilities": [
     "io:importers",
     "io:exporters",

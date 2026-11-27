@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ImporterGraph } from "../generated/opscr-mapping";
+import type { ImporterGraph } from "../opscr-mapping";
 import { canvasLayout, emptyBinding, planSync, sidecarMoves, type BindingState } from "./sync";
 import type { DiagramSnapshot, PluginComponentSnapshot } from "../types/plugin.types";
 
@@ -176,7 +176,8 @@ describe("canvasLayout", () => {
     const first = apply(graph(), emptyBinding(), diagramFor(emptyBinding(), graph())).next;
     const diagram = diagramFor(first, graph(), (cs) => (cs[2]!.position = { x: 999, y: 5 }));
     const { boxes } = canvasLayout(first, diagram);
-    expect(boxes.get("Database/db")).toEqual({ x: 999, y: 5, width: 180, height: 80 });
+    // No size on the canvas: 0, for Structura to size it as its type is drawn (api.layout.place).
+    expect(boxes.get("Database/db")).toEqual({ x: 999, y: 5, width: 0, height: 0 });
     expect(boxes.get("BoundedContext/orders")).toMatchObject({ width: 400, height: 300 });
   });
 });

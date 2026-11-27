@@ -1,45 +1,66 @@
 import { describe, expect, it } from "vitest";
-import { layoutView, setHostLayout } from "./layout";
-import type { PluginLayoutGraph } from "./types/plugin.types";
-import type { ViewLayoutGraph } from "./generated/opscr-mapping";
+import { readFileSync } from "node:fs";
+import { placeWorkspaceView, setHostLayout } from "./layout";
+import { buildTechnicalView, type OpscrWorkspaceInput } from "./opscr-mapping";
+import type { PluginLayout, PluginPlaceInput } from "./types/plugin.types";
 
-const graph: ViewLayoutGraph = {
-  nodes: [
-    { id: "shop", parentId: null, width: 240, height: 160 },
-    { id: "api", parentId: "shop", width: 180, height: 80 },
-    { id: "db", parentId: "shop", width: 180, height: 80 },
-  ],
-  edges: [{ id: "api-db", sourceId: "api", targetId: "db" }],
-};
+const sample = JSON.parse(
+  readFileSync(`${__dirname}/opscr-mapping/__fixtures__/sample.workspace.json`, "utf8"),
+) as OpscrWorkspaceInput;
+const view = buildTechnicalView(sample);
 
-describe("layoutView — the host's engine through api.layout", () => {
-  it("lays the view out left to right, boxes relative to the parent, no routes", async () => {
-    const { boxes, edgeRoutes } = await layoutView(graph);
-    expect([...boxes.keys()].sort()).toEqual(["api", "db", "shop"]);
-    expect(boxes.get("api")!.x).toBeLessThan(boxes.get("db")!.x);
-    const shop = boxes.get("shop")!;
-    const db = boxes.get("db")!;
-    expect(shop.width).toBeGreaterThanOrEqual(db.x + db.width);
+describe("placeWorkspaceView — Structura places the view (api.layout.place)", () => {
+  it("places every element, children relative to their panel, no routes", async () => {
+    const { boxes, edgeRoutes } = await placeWorkspaceView(view);
+    expect([...boxes.keys()].sort()).toEqual(view.nodes.map((n) => n.id).sort());
     expect(edgeRoutes.size).toBe(0);
+    for (const node of view.nodes) {
+      const box = boxes.get(node.id)!;
+      expect(box.width, node.id).toBeGreaterThan(0);
+      if (node.parentId === null) continue;
+      const parent = boxes.get(node.parentId)!;
+      expect(box.x + box.width, node.id).toBeLessThanOrEqual(parent.width);
+      expect(box.y + box.height, node.id).toBeLessThanOrEqual(parent.height);
+    }
   });
 
-  it("hands a seed over as the nodes' positions, and nothing else", async () => {
-    const seen: PluginLayoutGraph[] = [];
-    const host = setHostLayout({
-      arrange: async (g) => {
-        seen.push(g);
-        return { boxes: { api: { x: 1, y: 2, width: 3, height: 4 } } };
+  it("keeps what is drawn exactly where it is", async () => {
+    const first = await placeWorkspaceView(view);
+    const again = await placeWorkspaceView(view, first);
+    for (const [id, box] of first.boxes) expect(again.boxes.get(id), id).toMatchObject(box);
+  });
+
+  it("hands the host the importer graph, what is drawn under which parent, and the diagram", async () => {
+    const seen: PluginPlaceInput[] = [];
+    const fake: PluginLayout = {
+      arrange: async () => ({ boxes: {} }),
+      place: async (input) => {
+        seen.push(input);
+        return { boxes: {} };
       },
-    });
+    };
+    const host = setHostLayout(fake);
     try {
-      const result = await layoutView(
-        graph,
-        new Map([["api", { x: 10, y: 20, width: 1, height: 1 }]]),
+      const leaf = view.nodes.find((n) => n.parentId !== null)!;
+      await placeWorkspaceView(
+        view,
+        {
+          boxes: new Map([[leaf.id, { x: 10, y: 20, width: 0, height: 0 }]]),
+          edgeRoutes: new Map(),
+          parents: new Map([[leaf.id, "#elsewhere"]]),
+        },
+        "d1",
       );
-      expect(seen[0]!.nodes.find((n) => n.id === "api")!.position).toEqual({ x: 10, y: 20 });
-      expect(seen[0]!.nodes.find((n) => n.id === "db")!.position).toBeUndefined();
-      expect(seen[0]!.edges).toEqual(graph.edges);
-      expect(result.boxes.get("api")).toEqual({ x: 1, y: 2, width: 3, height: 4 });
+      const input = seen[0]!;
+      expect(input.diagramId).toBe("d1");
+      expect(input.graph.components.map((c) => c.key).sort()).toEqual(
+        view.nodes.map((n) => n.id).sort(),
+      );
+      // Labelled as drawn, so the host makes room for the labels.
+      expect(input.graph.connections.every((c) => typeof c.label === "string")).toBe(true);
+      expect(input.previous).toEqual({
+        [leaf.id]: { x: 10, y: 20, width: 0, height: 0, parentKey: "#elsewhere" },
+      });
     } finally {
       if (host) setHostLayout(host);
     }

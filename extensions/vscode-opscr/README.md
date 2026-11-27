@@ -68,7 +68,7 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
 - **Problems:** opscr errors and warnings appear in the Problems panel, on their file and line.
 - **Theme:** dark or light, following VSCode.
 
-What is drawn is Structura's technical view of opscr (`src/lib/opscr-mapping`): Domains and bounded
+What is drawn is Structura's technical view of opscr (the opscr plugin's `src/opscr-mapping`, copied by `sync-shared`): Domains and bounded
 contexts as panels, technical Kinds as their AWS / GCP / Azure / OSS components, flow edges as
 connections. The preview never writes a file.
 
@@ -97,17 +97,20 @@ code --install-extension vscode-opscr-<version>.vsix
 *.opscr.yaml ──(extension host, Node)──────────────────────────────────────┐
   opscr/core: parse + validate ──► Problems panel                           │
   opscr-mapping: technical view                                             │
-  opscr-layout: ELK, seeded with the previous picture                       │
-  stabilizeLayout: survivors keep their boxes ──► importer-shaped graph ────┤
+  placement: Structura's, in the webview (STRUCTURA_PLACE ⇄ RESULT):        │
+    drawn elements keep their boxes, new ones go beside what they connect ─┤
                                                                             ▼
 webview: Structura's embed preview (dist-embed) ◄── postMessage (src/embed/protocol.ts):
-         LOAD_GRAPH, BLOCKED (why there is no new picture), SEARCH, THEME, SELECT ──►
-                                               ◄── REVEAL (a click), OPEN_PROBLEM
+         LOAD_GRAPH, PLACE, BLOCKED (why there is no new picture), SEARCH, THEME, SELECT ──►
+                                               ◄── PLACE_RESULT, REVEAL (a click), OPEN_PROBLEM
 ```
 
 - `src/pipeline.ts` — YAML → graph, no VSCode API (unit-tested).
+- `src/webview-placer.ts` — placement: Structura's, reached through the webview. The extension
+  sizes and places nothing itself; tests use the host's `api.layout.place`
+  (`test/host-layout.setup.ts`, in the host's own test environment).
 - `src/extension.ts` — commands, debounce, diagnostics, webview.
-- `src/generated/` — the host libraries, copied by `npm run sync-shared`; do not edit.
+- `src/generated/` — the opscr plugin's `opscr-mapping`, copied by `npm run sync-shared`; do not edit.
 - `media/embed/` — the host's `npm run build:embed` output, copied by `npm run copy-embed`.
 
 ## Tests

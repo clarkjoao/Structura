@@ -178,6 +178,29 @@ that order instead of choosing its own. Edge routes are not returned — the can
 connections itself. Malformed nodes and edges (no id, no finite size, an end not in `nodes`) are
 dropped. Declare `"apiVersion": "^1.19"` to rely on it.
 
+Since API 1.20 an edge may carry the `label` the canvas draws on it (and its `technology`):
+the engine reserves room for that pill between the two ends, sized by the host the way the
+canvas sizes it, so a labelled graph lays out as the canvas's Arrange lays it out. Leave it out
+only for an edge drawn without a label.
+
+### Placing a diagram the way the canvas does (API 1.21)
+
+`api.layout.place({ graph, previous?, diagramId? })` takes an importer graph (API 1.3) and returns
+every component's box by key, relative to its parent — placed by the canvas itself, so a plugin
+that keeps a diagram in step with its own source neither sizes nor positions anything:
+
+- Sizes are the canvas's for each type; sizes and positions in `graph` are ignored.
+- With nothing in `previous`, the graph is laid out by the canvas's Arrange (reading direction,
+  sources first, spacing, edge labels; no references).
+- With `previous` (where elements are drawn now, by key, with their `parentKey`), what is still
+  under the same parent keeps its box exactly; each new element goes beside what it is connected
+  to, along the reading, where it overlaps nothing — the canvas's automatic mode — and containers
+  grow to hold what lands in them. A width or height of 0 in `previous` means "not known".
+- `diagramId` places for that diagram: its reading direction and Arrange settings.
+
+Declare `"apiVersion": "^1.21"` to rely on it. `api.layout.arrange` (above) stays the bare engine
+for a plugin that only wants boxes for a graph it sizes itself.
+
 ### Structura's components: the UI kit (API 1.18)
 
 Draw plugin UI with the host's own components, so it matches Structura in light and dark, with

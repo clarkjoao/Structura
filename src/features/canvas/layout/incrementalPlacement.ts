@@ -46,6 +46,13 @@ export interface IncrementalPlacementInput {
    * the mirrored diagram (`axis.ts`).
    */
   direction?: DiagramDirection;
+  /**
+   * What happens to a dirty element with nothing placed to sit next to. Absent, it stays where
+   * it was put — on the canvas, where the author dropped it. On, it slides down from there until
+   * it overlaps nothing, like a placed one: what a host that places a graph it did not draw
+   * (`api.layout.place`) needs, since nobody dropped those elements anywhere.
+   */
+  slideUnanchored?: boolean;
 }
 
 function sizeOf(
@@ -212,43 +219,65 @@ function placeLeftToRight(input: IncrementalPlacementInput): AppliedLayout[] {
     // parent's absolute origin (own absolute minus own relative).
     const originX = ownAbs.x - ownRel.x;
     const originY = ownAbs.y - ownRel.y;
-    let x =
+    const x =
       anchor.side === "right"
         ? anchorAbs.x + anchorBox.width + columnGap - originX
         : anchorAbs.x - columnGap - size.width - originX;
-    let y = anchorAbs.y + anchorBox.height / 2 - size.height / 2 - originY;
-    // Inside a container, never past its left or top edge.
+    const y = anchorAbs.y + anchorBox.height / 2 - size.height / 2 - originY;
+    settle(id, x, y, { x: originX, y: originY });
+    return true;
+  };
+
+  /**
+   * Puts `id` at (`x`, `y`) in its parent's coordinates — never past a container's left or top
+   * edge — then slides it down until it overlaps nothing, and grows its containers to hold it.
+   */
+  const settle = (id: string, x: number, y: number, origin: { x: number; y: number }): void => {
+    const size = sizeOf(id, nodeLayouts, measured);
     if (components[id]?.parentId) {
       x = Math.max(x, rowGap);
       y = Math.max(y, rowGap);
     }
-
     const obstacles = obstaclesOf(id);
     for (let guard = 0; guard < 200; guard += 1) {
-      const candidate = { x: x + originX, y: y + originY, ...size };
+      const candidate = { x: x + origin.x, y: y + origin.y, ...size };
       const blocker = obstacles.find((box) => overlaps(candidate, box, rowGap / 2));
       if (!blocker) break;
-      y = blocker.y + blocker.height + rowGap - originY;
+      y = blocker.y + blocker.height + rowGap - origin.y;
     }
-
     placed.set(id, { x: Math.round(x), y: Math.round(y) });
     growContainers(id);
-    return true;
+  };
+
+  /** A dirty element with no neighbour to sit next to: from where it is, down to a free spot. */
+  const slideOne = (id: string): void => {
+    const ownAbs = absolute(id);
+    const ownRel = relative(id);
+    if (!ownAbs || !ownRel) return;
+    settle(id, ownRel.x, ownRel.y, { x: ownAbs.x - ownRel.x, y: ownAbs.y - ownRel.y });
   };
 
   // Chains (an element added together with what it connects to) are placed
   // from the fixed side outwards.
   const pending = [...dirty].sort();
-  let progress = true;
-  while (progress && pending.length > 0) {
-    progress = false;
-    for (let index = 0; index < pending.length; index += 1) {
-      if (placeOne(pending[index]!)) {
-        pending.splice(index, 1);
-        index -= 1;
-        progress = true;
+  const placeChains = (): void => {
+    let progress = true;
+    while (progress && pending.length > 0) {
+      progress = false;
+      for (let index = 0; index < pending.length; index += 1) {
+        if (placeOne(pending[index]!)) {
+          pending.splice(index, 1);
+          index -= 1;
+          progress = true;
+        }
       }
     }
+  };
+  placeChains();
+  // One at a time: a slid element can be what the rest of a chain sits next to.
+  while (input.slideUnanchored && pending.length > 0) {
+    slideOne(pending.shift()!);
+    placeChains();
   }
 
   const placements: AppliedLayout[] = [...placed].map(([elementId, { x, y }]) => ({

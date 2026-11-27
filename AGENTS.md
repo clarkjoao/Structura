@@ -66,10 +66,7 @@ src/
 ├── embed/                  # embed.html / embed-editor.html entries and their postMessage protocols
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
-├── lib/                    # export-service (drawio/mermaid/json), catalogs, utils;
-│                           # opscr-mapping is copied into the opscr plugin and the VSCode
-│                           # extension, opscr-layout into the extension only, by their
-│                           # `sync-shared` scripts (plugins lay out through `api.layout`)
+├── lib/                    # export-service (drawio/mermaid/json), catalogs, utils
 └── fixtures/seeds/         # demo workspace content (Portuguese demo data is intentional)
 ```
 
@@ -95,6 +92,17 @@ src/
   handles, absent by default — and is never derived from geometry. Top-to-bottom
   layouts run the left-to-right pipeline on the mirrored graph (`layout/axis.ts`);
   do not fork the layout readers per axis.
+- **One layout engine and one placement: `features/canvas/layout`** (ELK, the Arrange, the
+  automatic mode's incremental placement, the sizes by type). No other module, plugin or extension
+  imports, configures or depends on `elkjs`, or sizes and places elements itself. Plugins place
+  through `api.layout.place` (API 1.21; `api.layout.arrange` is the bare engine); the embed answers
+  `STRUCTURA_PLACE` with the same implementation, which is how the VSCode extension places. Never
+  add a copy for a channel that "cannot import the host" — route it through one of those instead.
+  Locked by `layout/singleEngine.guard.test.ts`.
+- **opscr lives in its plugin, not in the app.** The projection (`opscr-mapping`) is
+  `plugins/structura-plugin-opscr/src/opscr-mapping`; the VSCode extension copies it from there.
+  `src/` imports neither it nor the `opscr` package (`features/plugins/opscr-out-of-host.guard.test.ts`):
+  what the app offers opscr is the plugin API and the embed protocol.
 - **Type guards, not raw strings**: `isPanelComponent(c)` / `isPanelType(t)` from
   `@/features/diagram` — never `c.type === "panel"`.
 - **No hardcoded user-visible strings**: always `t("key")` with entries in both

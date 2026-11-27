@@ -1,7 +1,7 @@
 /**
  * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Verbatim copy of the host's src/lib/opscr-mapping, synced via `npm run sync-shared`.
- * Edit the host files and re-sync instead of changing this file.
+ * Verbatim copy of plugins/structura-plugin-opscr/src/opscr-mapping, synced via `npm run sync-shared`.
+ * Edit the plugin's files and re-sync instead of changing this file.
  */
 
 import type { PlacedView } from "./layout";

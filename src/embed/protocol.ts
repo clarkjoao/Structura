@@ -2,7 +2,7 @@ import {
   normalizeLayoutSettings,
   type DiagramLayoutSettings,
 } from "@/features/diagram/model/layout-settings";
-import type { ImportResult } from "@/features/plugins/plugin.types";
+import type { ImportResult, PluginPlaceInput } from "@/features/plugins/plugin.types";
 
 /**
  * The embed preview's `postMessage` protocol.
@@ -20,6 +20,8 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  *   embed → host   STRUCTURA_OPEN_PROBLEM { index }                 the reader clicked a BLOCKED problem
  *   host  → embed  STRUCTURA_PROBE                                   say what is on screen
  *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible, blocked, selected }   …the answer (for tests)
+ *   host  → embed  STRUCTURA_PLACE { id, graph, previous?, arrange? }   place a graph as the canvas does
+ *   embed → host   STRUCTURA_PLACE_RESULT { id, boxes } | { id, error }   …the boxes, by component key
  *
  * The graph is the plugin importer result (API 1.3), so a host that can write an importer
  * can drive the preview, and both draw the same thing. An element is named by its component
@@ -29,6 +31,13 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  * `"automatic"` arranges every picture in the embed with the canvas arranger, under
  * `settings` (a `DiagramLayoutSettings`: density, gaps, references), so it reads the way the
  * diagram reads on the canvas. An absent or malformed `arrange` on LOAD_GRAPH keeps the current one.
+ *
+ * `STRUCTURA_PLACE` is `api.layout.place` (plugin API 1.21) over `postMessage`: an importer graph
+ * and where its elements are drawn now (`previous`, by key), answered with every element's box by
+ * the same implementation the app hands plugins (`features/plugins/plugin-place`), under the
+ * `arrange` settings. It is how a host that cannot run the canvas itself — the VSCode extension,
+ * in its Node host — places a picture: one engine and one placement, `features/canvas/layout`,
+ * for every channel.
  *
  * Messages to the host go to the embedding page (`window.parent`), or — inside a VSCode
  * webview, where the parent is not the extension — through `acquireVsCodeApi()`.
@@ -46,6 +55,8 @@ export const REVEAL = "STRUCTURA_REVEAL";
 export const OPEN = "STRUCTURA_OPEN";
 export const OPEN_PROBLEM = "STRUCTURA_OPEN_PROBLEM";
 export const ARRANGE = "STRUCTURA_ARRANGE";
+export const PLACE = "STRUCTURA_PLACE";
+export const PLACE_RESULT = "STRUCTURA_PLACE_RESULT";
 
 /** Who places the picture: the host (`manual`), or the canvas arranger in the embed (`automatic`). */
 export interface PreviewArrange {
@@ -65,6 +76,14 @@ export type PreviewGraph = Pick<ImportResult, "components" | "connections">;
 export type EmbedMessage =
   | { type: typeof LOAD_GRAPH; graph: PreviewGraph; arrange?: PreviewArrange }
   | { type: typeof ARRANGE; arrange: PreviewArrange }
+  /** `id` is the host's, echoed in the answer; the graph is checked as an import's would be. */
+  | {
+      type: typeof PLACE;
+      id: string | number;
+      graph: PluginPlaceInput["graph"];
+      previous?: PluginPlaceInput["previous"];
+      arrange?: PreviewArrange;
+    }
   | { type: typeof THEME; theme: "light" | "dark" }
   | { type: typeof SEARCH }
   | { type: typeof PROBE }
@@ -129,6 +148,28 @@ export function readEmbedMessage(data: unknown): EmbedMessage | null {
   if (data["type"] === ARRANGE) {
     const arrange = readArrange(data["arrange"]);
     return arrange ? { type: ARRANGE, arrange } : null;
+  }
+  if (data["type"] === PLACE) {
+    const id = data["id"];
+    const graph = data["graph"];
+    const validId = typeof id === "string" || (typeof id === "number" && Number.isFinite(id));
+    if (!validId || !isRecord(graph)) return null;
+    const { components, connections } = graph;
+    if (!Array.isArray(components) || !Array.isArray(connections)) return null;
+    const previous = data["previous"];
+    const arrange = readArrange(data["arrange"]);
+    // As they came: the graph is checked as an import's is (`toGeneratedGraph`), and a previous
+    // box only counts when it is finite (`placeGraph`).
+    return {
+      type: PLACE,
+      id,
+      graph: {
+        components: components as PluginPlaceInput["graph"]["components"],
+        connections: connections as PluginPlaceInput["graph"]["connections"],
+      },
+      ...(isRecord(previous) && { previous: previous as PluginPlaceInput["previous"] }),
+      ...(arrange && { arrange }),
+    };
   }
   if (data["type"] === LOAD_GRAPH) {
     const { components, connections } = data;

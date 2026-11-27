@@ -34,7 +34,7 @@ type DiagramNodeComponent = NodeTypes[string];
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.19.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.21.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -1022,7 +1022,18 @@ export interface PluginLayoutGraph {
     position?: { x: number; y: number };
   }>;
   /** An edge whose ends are not both in `nodes` is ignored. */
-  edges: Array<{ id: string; sourceId: string; targetId: string }>;
+  edges: Array<{
+    id: string;
+    sourceId: string;
+    targetId: string;
+    /**
+     * v1.20 — the text the canvas draws on this edge, and its technology line. The engine
+     * reserves room for that pill between the two ends, sized the way the canvas sizes it, so a
+     * labelled edge is laid out as the canvas's Arrange lays it out. Absent: no label drawn.
+     */
+    label?: string;
+    technology?: string;
+  }>;
 }
 
 export interface PluginLayoutBox {
@@ -1048,6 +1059,34 @@ export interface PluginLayoutResult {
 export interface PluginLayout {
   /** Malformed nodes (no id, no finite size) and edges (an end not in `nodes`) are dropped. */
   arrange(graph: PluginLayoutGraph): Promise<PluginLayoutResult>;
+  /**
+   * v1.21 — places an importer graph the way the canvas places a diagram, so a plugin that keeps
+   * a diagram in step with its own source neither sizes nor positions anything itself. Boxes come
+   * back by component key, relative to the parent. See `PluginPlaceInput`.
+   */
+  place(input: PluginPlaceInput): Promise<PluginLayoutResult>;
+}
+
+/**
+ * v1.21 — what `api.layout.place` places. With nothing drawn yet, the canvas's Arrange (reading
+ * direction, sources first, spacing, edge labels; no references). Afterwards the canvas's
+ * automatic mode: what is drawn stays exactly where it is, and each new element goes beside what
+ * it is connected to, along the reading, where it overlaps nothing — containers grow to hold it.
+ */
+export interface PluginPlaceInput {
+  /**
+   * The importer graph (API 1.3). Positions and sizes in it are ignored: every element is sized
+   * as the canvas draws its type.
+   */
+  graph: Pick<ImportResult, "components" | "connections">;
+  /**
+   * Where elements are drawn now, by key: the box relative to `parentKey` (null: the root). An
+   * element still under that parent keeps this box exactly; any other is placed. A width or
+   * height of 0 means not known: the element takes the size the canvas draws its type at.
+   */
+  previous?: Record<string, PluginLayoutBox & { parentKey: string | null }>;
+  /** The diagram to place for: its reading direction and Arrange settings. Absent: left to right, defaults. */
+  diagramId?: string;
 }
 
 export interface StructuraPluginApi {

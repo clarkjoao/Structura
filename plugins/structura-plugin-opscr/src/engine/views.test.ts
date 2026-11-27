@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import { describe, expect, it } from "vitest";
-import { LAYOUT_FILE, layoutFor } from "../generated/opscr-mapping";
+import { LAYOUT_FILE, layoutFor } from "../opscr-mapping";
 import { projector } from "../project";
 import { OpscrEngine, type EngineEvent } from "./engine";
 import { FakeCanvas } from "./fake-canvas.fixture";

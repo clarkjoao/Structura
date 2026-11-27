@@ -1,5 +1,5 @@
 /**
- * Regenerates the opscr sample fixture used by `src/lib/opscr-mapping` tests.
+ * Regenerates the opscr sample fixture used by `src/opscr-mapping` tests.
  *
  * Compiles `examples/sample` of an opscr checkout with `opscr/core` (the same engine
  * as `opscr compile`) and writes its manifests — kind, name and spec only, the shape
@@ -17,8 +17,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const opscrDir = resolve(process.env.OPSCR_DIR ?? join(here, "../../asc"));
-const out = join(here, "../src/lib/opscr-mapping/__fixtures__/sample.workspace.json");
+const opscrDir = resolve(process.env.OPSCR_DIR ?? join(here, "../../../../asc"));
+const out = join(here, "../src/opscr-mapping/__fixtures__/sample.workspace.json");
 
 const core = await import(pathToFileURL(join(opscrDir, "dist/core.js")).href);
 const sampleDir = join(opscrDir, "examples/sample");

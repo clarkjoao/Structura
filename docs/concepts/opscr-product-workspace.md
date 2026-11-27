@@ -216,7 +216,7 @@ The bundled `opscr-architect` skill must teach, in short:
 | 1 | Kinds `Product`, `Initiative`; `metadata.links`; edge `realizes`; `opscr.workspace.yaml` | opscr schemas |
 | 2 | Overlay: load root + `initiatives/*`, merge rules, `diffWorkspace`, lock, `opscr promote` | `opscr/core` + CLI |
 | 6 | Skill rules | opscr skill (then `npm run build-skill` in the plugin) |
-| 3 | Rule-based Views (C1/C2/Deployment with `realizes`, Product scope) | `opscr/core` + `src/lib/opscr-mapping` |
+| 3 | Rule-based Views (C1/C2/Deployment with `realizes`, Product scope) | `opscr/core` + the plugin's `opscr-mapping` |
 | 4 | Versions refactored as branches (generic, `modified`, status, base hash, merge) + plugin API | Structura host |
 | 5 | Pane: read `initiatives/`, Version = initiative, copy-on-write, promote in the UI | plugin opscr |
 

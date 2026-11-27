@@ -4,11 +4,10 @@ import {
   isManifestName,
   placeView,
   toImporterGraph,
-  toLayoutGraph,
   type PlacedView,
-} from "./generated/opscr-mapping";
+} from "./opscr-mapping";
 import type { ImportContext, ImportResult } from "./types/plugin.types";
-import { layoutView } from "./layout";
+import { placeWorkspaceView } from "./layout";
 
 const OPSCR_API_VERSION = /^\s*apiVersion:\s*["']?opscr\.dev\//m;
 /** opscr errors listed one by one before the rest are only counted. */
@@ -47,7 +46,7 @@ export async function importOpscr(contents: string, ctx: ImportContext): Promise
     files: [{ path: "import.opscr.yaml", content: contents }],
   });
   const view = buildTechnicalView(workspace);
-  const placed = placeView(view, await layoutView(toLayoutGraph(view)));
+  const placed = placeView(view, await placeWorkspaceView(view));
   return {
     ...toImporterGraph(placed, ctx.anchor),
     warnings: warningsOf(result.diagnostics, placed),

@@ -1,4 +1,4 @@
-import { parseVisualFile, type VisualFile } from "../generated/opscr-mapping";
+import { parseVisualFile, type VisualFile } from "../opscr-mapping";
 import type { DiagramSnapshot } from "../types/plugin.types";
 import type { BindingState } from "./sync";
 
