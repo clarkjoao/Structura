@@ -92,6 +92,19 @@ function layoutEndpointId(
   return componentId;
 }
 
+/**
+ * The size the layout gives an element: the stored one, else the measured one, else the default
+ * for its type. Exported for `api.layout.place`, which sizes a plugin's elements the same way.
+ */
+export function layoutSizeOf(
+  component: Component,
+  nodeLayouts: Record<string, NodeLayout>,
+  measured: FromDiagramOptions["measured"],
+  components: Record<string, Component>,
+): { width: number; height: number } {
+  return sizeOf(component, nodeLayouts, measured, components);
+}
+
 function sizeOf(
   component: Component,
   nodeLayouts: Record<string, NodeLayout>,

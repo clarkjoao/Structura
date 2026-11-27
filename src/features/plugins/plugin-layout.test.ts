@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { edgeLabelBox } from "@/features/canvas/layout/edgeLabelBox";
 import { layoutKeepingOrder } from "@/features/canvas/layout/layoutEngine";
 import { pluginLayout, toLayoutGraph } from "./plugin-layout";
 import type { PluginLayoutGraph } from "./plugin.types";
@@ -27,6 +28,38 @@ describe("api.layout.arrange — the host's engine for a plugin's graph", () => 
     expect(boxes["a"]!.x).toBeLessThan(boxes["b"]!.x);
     expect(boxes["panel"]!.width).toBeGreaterThanOrEqual(boxes["b"]!.x + boxes["b"]!.width);
     expect(boxes["panel"]!.x + boxes["panel"]!.width).toBeLessThanOrEqual(boxes["c"]!.x);
+  });
+
+  it("makes room for edge labels the way the canvas does (v1.20)", async () => {
+    const labelled: PluginLayoutGraph = {
+      nodes: graph.nodes,
+      edges: graph.edges.map((e) => ({ ...e, label: "publishes events to", technology: "Kafka" })),
+    };
+    const input = toLayoutGraph(labelled);
+    // Sized by the canvas's own pill estimate, never by the plugin.
+    for (const edge of input.edges) {
+      expect(edge.labelBox).toEqual(edgeLabelBox("publishes events to", "Kafka"));
+    }
+    const { boxes } = await pluginLayout.arrange(labelled);
+    const host = await layoutKeepingOrder(input);
+    for (const [id, box] of host.boxes) expect(boxes[id]).toEqual(box);
+    // The label takes room between the ends: further apart than with no label.
+    const plain = await pluginLayout.arrange(graph);
+    expect(boxes["c"]!.x).toBeGreaterThan(plain.boxes["c"]!.x);
+  });
+
+  it("an empty or non-string label reserves nothing", () => {
+    // Plugin data as it may arrive: JSON with no type behind it.
+    const messy: PluginLayoutGraph = JSON.parse(`{
+      "nodes": ${JSON.stringify(graph.nodes)},
+      "edges": [
+        { "id": "a-b", "sourceId": "a", "targetId": "b", "label": "  " },
+        { "id": "b-c", "sourceId": "b", "targetId": "c", "label": 42, "technology": {} }
+      ]
+    }`);
+    const input = toLayoutGraph(messy);
+    expect(input.edges).toHaveLength(2);
+    expect(input.edges.every((e) => e.labelBox === undefined)).toBe(true);
   });
 
   it("is deterministic", async () => {
