@@ -272,7 +272,7 @@ export function baseConnectionsTouchingAny(
     .map((c) => c.id);
 }
 
-export interface CompareSnapshotResult {
+interface CompareSnapshotResult {
   onlyInA: { components: string[]; connections: string[] };
   onlyInB: { components: string[]; connections: string[] };
   inBoth: { components: string[]; connections: string[] };
@@ -282,7 +282,7 @@ export interface CompareSnapshotResult {
   mergedLayouts: Record<string, NodeLayout>;
 }
 
-export function resolveCompareSnapshot(
+function resolveCompareSnapshot(
   diagram: VersionDiagram,
   sceneAId: string,
   sceneBId: string,

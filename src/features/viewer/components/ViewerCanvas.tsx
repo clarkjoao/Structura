@@ -89,8 +89,7 @@ interface ViewerCanvasProps {
    * Forward was pressed with nowhere left to go inside this diagram.
    *
    * The viewer reports its edge and does nothing else — it is used by the
-   * share route, where there is no "next", as well as by the walkthrough
-   * player, where there is. Deciding what lies beyond the end of a script is
+   * share route, where there is no "next". Deciding what lies beyond the end of a script is
    * the host's business, never the canvas's.
    *
    * Not fired at a branch point: a step waiting on a choice also has no next
@@ -103,10 +102,10 @@ interface ViewerCanvasProps {
    * The reading stays on the flow the link named, and the rail offers no way
    * to another one.
    *
-   * For a host that decides which flow is being read — a walkthrough scene
-   * names one — because swapping underneath it would leave the host tracking a
-   * reading nobody is on, and reaching the end of the substituted flow would
-   * report an ending for a scene the reader never finished.
+   * For a host that decides which flow is being read, because swapping
+   * underneath it would leave the host tracking a reading nobody is on, and
+   * reaching the end of the substituted flow would report an ending the reader
+   * never finished.
    */
   lockedToInitialFlow?: boolean;
   /** Ctrl/Cmd+F opens a search of the diagram's elements; picking one brings it into view. */

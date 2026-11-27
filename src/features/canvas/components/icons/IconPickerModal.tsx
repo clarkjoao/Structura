@@ -25,7 +25,7 @@ import { AwsIconPickerPanel } from "./AwsIconPickerPanel";
 import { IconPickerLibraryGrid } from "./IconPickerLibraryGrid";
 import { LucidePickerPanel } from "./LucidePickerPanel";
 
-export type IconTab = "library" | "lucide" | "aws" | "upload";
+type IconTab = "library" | "lucide" | "aws" | "upload";
 
 export interface IconPickerModalProps {
   diagramId: string;

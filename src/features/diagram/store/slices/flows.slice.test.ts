@@ -359,6 +359,24 @@ describe("flowsSlice — editing the graph from the panel", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
+  it("converting twice leaves no orphan steps behind (38ed79ea)", () => {
+    const store = createTestDiagramStore();
+    const { flowId, byLabel } = threeSteps(store);
+    store.getState().convertStepToCondition(flowId, byLabel["2"]!, "paid?", ["yes", "no"]);
+    const once = readFlow(store, flowId);
+    const stepIds = Object.keys(once.steps).sort();
+
+    const again = store
+      .getState()
+      .convertStepToCondition(flowId, byLabel["2"]!, "again?", ["a", "b", "c"]);
+
+    expect(again.ok).toBe(false);
+    const flow = readFlow(store, flowId);
+    expect(Object.keys(flow.steps).sort()).toEqual(stepIds);
+    expect(flow.steps[byLabel["2"]!]!.conditionLabel).toBe("paid?");
+    expect(checkFlowInvariants(flow)).toEqual([]);
+  });
+
   it("adds and removes a branch", () => {
     const store = createTestDiagramStore();
     const { flowId, byLabel } = threeSteps(store);

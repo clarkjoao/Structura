@@ -59,8 +59,8 @@ interface Props {
    * Whether the reader may move to another script.
    *
    * False where something outside the diagram decides which script is being
-   * read — a walkthrough scene names its flow, and letting the reader swap it
-   * would leave the walkthrough tracking a script nobody is on.
+   * read — letting the reader swap it would leave that host tracking a
+   * script nobody is on.
    */
   canSwitchFlow?: boolean;
   /**

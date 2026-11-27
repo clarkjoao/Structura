@@ -3,13 +3,10 @@ import { EdgeStyle } from "../enums";
 
 const STORAGE_KEY = "structura:lastEdgeStyle";
 
+const EDGE_STYLES: readonly string[] = Object.values(EdgeStyle);
+
 function isEdgeStyle(value: string | null): value is EdgeStyle {
-  return (
-    value === EdgeStyle.Straight ||
-    value === EdgeStyle.Bezier ||
-    value === EdgeStyle.Step ||
-    value === EdgeStyle.Smoothstep
-  );
+  return value !== null && EDGE_STYLES.includes(value);
 }
 
 export function getLastEdgeStyle(): EdgeStyle {

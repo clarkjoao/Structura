@@ -10,7 +10,7 @@ import type { ExportEdge, ExportMarker } from "./model";
 import { buildEdgeStyle } from "./styles";
 import { escXml } from "./xml-utils";
 
-export function buildEdgeLabelPlain(edge: ExportEdge): string {
+function buildEdgeLabelPlain(edge: ExportEdge): string {
   const rawLabel = (edge.label ?? "").trim();
   const rawTech = (edge.technology ?? "").trim();
   if (rawTech) {

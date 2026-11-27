@@ -19,8 +19,6 @@ export interface AwsCategory {
  */
 export const AWS_CATEGORIES: AwsCategory[] = catalogView(awsPack, isAwsType);
 
-export const AWS_CATEGORY_MAP = new Map(AWS_CATEGORIES.map((c) => [c.id, c]));
-
 const _serviceMap = new Map<string, AwsService & { categoryId: string }>();
 AWS_CATEGORIES.forEach((cat) => {
   cat.services.forEach((svc) => {

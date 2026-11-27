@@ -155,7 +155,7 @@ export function buildPanelIds(
 }
 
 /** Typed containers drawn compact: `collapsible` and flagged `collapsed`. */
-export function buildCompactContainerIds(
+function buildCompactContainerIds(
   components: Record<string, Component>,
   describe?: DescribeNode,
 ): Set<string> {
@@ -173,7 +173,7 @@ export function buildCompactContainerIds(
  * Children that stay on screen as tabs on a compact parent, each with its
  * place: top to bottom as they sit in the parent, then by name.
  */
-export function buildCompactTabIds(
+function buildCompactTabIds(
   components: Record<string, Component>,
   compactIds: ReadonlySet<string>,
   nodeLayouts: Record<string, NodeLayout>,
@@ -201,7 +201,7 @@ export function buildCompactTabIds(
 }
 
 /** The edges drawn: a connection to a hidden component is not. */
-export function filterVisibleConnections(
+function filterVisibleConnections(
   connections: Connection[],
   components: Record<string, { hidden?: boolean }>,
 ): Connection[] {

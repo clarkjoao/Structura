@@ -9,12 +9,12 @@ not commitment — dates and staffing are out of scope.
 Almost everything on the roadmap hangs off three platform investments:
 
 ```
-Component-type extensibility (spec 0002) ──► VSM, Step Functions, Saga,
+Component-type extensibility (spec 0002) ──► VSM, Saga,
         │                                    Cell Builder improvements
 Command system (spec 0003) ──────────────► Edge Panels UI, MCP, palette/toolbar work
 Model Index (spec 0001) ─────────────────► Cross-diagram refs, Drill Down v2,
                                              Architecture Map, workspace AI Chat
-Edge redesign (spec 0004) ───────────────► Edge Panels, VSM/StepFunctions/Saga edges
+Edge redesign (spec 0004) ───────────────► Edge Panels, VSM/Saga edges
 ```
 
 Building roadmap features before their platform dependency means building
@@ -35,12 +35,11 @@ them twice. That is the main sequencing claim of this document.
 | **AI Chat** | exists per-diagram; workspace-wide needs Model Index | Core feature; providers are contributions | 0007 |
 | **MCP Integration** | command system + patch contract | Contribution on a core MCP host | 0007 |
 | **Value Stream Mapping** | 0002 + 0004 (+ 0005 to ship as plugin) | **Plugin** (diagram profile) | own spec after 0005 |
-| **AWS Step Functions elements** | 0002 + 0004; states are semantic → benefits from 0001 | **Plugin** (profile) | own spec after 0005 |
 | **Saga elements** | 0002 + 0004; compensation edges stress edge model hardest | **Plugin** (profile) | own spec after 0005 |
 
 Core-vs-plugin rationale: *identity, commands, edges, and interchange
 machinery* are platform (everyone's features sit on them); *diagram
-vocabularies* (VSM, Step Functions, Saga) are the archetypal profiles and
+vocabularies* (VSM, Saga) are the archetypal profiles and
 must be plugins — if they can't be, spec 0005 failed its acceptance test.
 
 ## Recommended sequencing (and where it challenges the given order)
@@ -64,12 +63,12 @@ must be plugins — if they can't be, spec 0005 failed its acceptance test.
 - **Spec 0005, contribution points v1**, dogfooded by converting built-ins.
 - **AI Chat (workspace-wide) + MCP** (spec 0007) on top of the command
   system and Model Index.
-- **VSM, Step Functions, Saga** as the first true profile plugins — also the
+- **VSM, Saga** as the first true profile plugins — also the
   acceptance test for the whole platform phase.
 
 **Challenges to the original roadmap ordering:**
 
-1. VSM/Step Functions/Saga are listed first but must come **last**: built
+1. VSM/Saga are listed first but must come **last**: built
    now, each hardcodes another vocabulary into the closed union and deepens
    the hole 0002 digs out of. Sequencing them last also makes them cheaper —
    they become mostly declarations.

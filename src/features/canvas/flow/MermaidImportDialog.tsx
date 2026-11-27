@@ -26,6 +26,7 @@ interface Props {
 
 interface ValidationState {
   errors: string[];
+  warnings: string[];
   newComponents: number;
   newConnections: number;
   diagramType: MermaidDiagramType;
@@ -79,6 +80,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
       if (diagramType === "unknown") {
         setValidation({
           errors: [t("flows.importDialog.unknownDiagramType")],
+          warnings: [],
           newComponents: 0,
           newConnections: 0,
           diagramType,
@@ -90,6 +92,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
         const result = parseMermaidSequence(text, {}, {}, { x: 0, y: 0 });
         setValidation({
           errors: result.errors,
+          warnings: [],
           newComponents: result.newComponents.length,
           newConnections: result.newConnections.length,
           diagramType,
@@ -100,6 +103,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
       const result = parseMermaidFlowchart(text, {}, {}, { x: 0, y: 0 });
       setValidation({
         errors: result.errors,
+        warnings: result.warnings.map((w) => t(`flows.importDialog.warnings.${w.key}`, w.params)),
         newComponents: result.newComponents.length,
         newConnections: result.newConnections.length,
         diagramType,
@@ -243,6 +247,14 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
                   </span>
                 </div>
               </div>
+            )}
+
+            {validation.warnings.length > 0 && (
+              <ul className="list-disc space-y-0.5 pl-6 text-xs text-muted-foreground">
+                {validation.warnings.map((warning, index) => (
+                  <li key={`${warning}-${index}`}>{warning}</li>
+                ))}
+              </ul>
             )}
 
             {validation.errors.length > 0 && (

@@ -2,7 +2,7 @@ import { SVG_MAX_BYTES, SVG_MAX_DIMENSION } from "./svg.utils";
 
 const RASTER_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
 
-export function isRasterImageMime(mime: string): boolean {
+function isRasterImageMime(mime: string): boolean {
   return RASTER_TYPES.has(mime.toLowerCase());
 }
 

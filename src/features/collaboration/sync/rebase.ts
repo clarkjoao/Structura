@@ -109,7 +109,7 @@ function stripUndefined(entity: Entity): Entity {
 }
 
 /** Confirmed state plus every local patch already sent. */
-export function sentBase(sync: SyncState): DiagramState {
+function sentBase(sync: SyncState): DiagramState {
   return sync.sent.reduce((state, op) => applyEffectivePatch(state, op.patch), sync.confirmed);
 }
 

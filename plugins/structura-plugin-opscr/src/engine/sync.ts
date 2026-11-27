@@ -63,7 +63,7 @@ export interface Tombstones {
 export const emptyBinding = (): BindingState => ({ ids: {}, connections: {}, signatures: {} });
 
 /** Everything about an element that, when it changes, must reach the canvas. */
-export const signature = (c: ImporterGraphComponent) =>
+const signature = (c: ImporterGraphComponent) =>
   JSON.stringify([
     c.name,
     c.description,
@@ -73,11 +73,10 @@ export const signature = (c: ImporterGraphComponent) =>
     ...(c.linkedDiagramId !== undefined ? [c.linkedDiagramId] : []),
   ]);
 /** What cannot be updated in place: changing it means removing and re-adding the element. */
-export const identity = (c: ImporterGraphComponent) =>
-  JSON.stringify([c.type, c.parentKey ?? null]);
+const identity = (c: ImporterGraphComponent) => JSON.stringify([c.type, c.parentKey ?? null]);
 
 /** Connections are keyed by ends and label, numbered when the same pair repeats. */
-export const connectionKeys = (graph: ImporterGraph): string[] =>
+const connectionKeys = (graph: ImporterGraph): string[] =>
   importerConnectionKeys(graph.connections);
 
 /**

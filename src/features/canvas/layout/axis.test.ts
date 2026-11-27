@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { transposeGraph, transposeResult, inDirection } from "./axis";
 import type { LayoutGraph } from "./contract";
 import { layout } from "./layoutEngine";
 import { planDiagramAutoLayout } from "./autoLayoutDiagram";
 import { placeIncrementally } from "./incrementalPlacement";
-import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { REFERENCE_DIAGRAMS, fixtureGraph } from "./reference-diagrams";
 
 const component = (
   id: string,
@@ -66,8 +65,8 @@ describe("top-to-bottom layout", () => {
   });
 
   it("keeps every child inside its container on the reference diagrams", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = irToLayoutGraph(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = fixtureGraph(diagram);
       const result = await inDirection("TB", layout)(graph);
       const present = new Set(graph.nodes.map((node) => node.id));
       for (const node of graph.nodes) {
@@ -87,7 +86,7 @@ describe("top-to-bottom layout", () => {
   });
 
   it("leaves a left-to-right layout exactly as it was", async () => {
-    const graph = irToLayoutGraph(REFERENCE_DIAGRAMS[0]!.ir);
+    const graph = fixtureGraph(REFERENCE_DIAGRAMS[0]!.diagram);
     expect(await inDirection("LR", layout)(graph)).toEqual(await layout(graph));
     expect(await inDirection(undefined, layout)(graph)).toEqual(await layout(graph));
   });

@@ -1,0 +1,92 @@
+{
+  "id": "fx-evil",
+  "name": "Evil",
+  "level": "context",
+  "createdAt": 1700000000000,
+  "updatedAt": 1700000000000,
+  "snapshot": {
+    "components": {
+      "user": {
+        "id": "user",
+        "name": "User",
+        "type": "person",
+        "description": "",
+        "parentId": null
+      },
+      "api": {
+        "id": "api",
+        "name": "API",
+        "type": "system",
+        "description": "",
+        "parentId": null
+      },
+      "db": {
+        "id": "db",
+        "name": "Database",
+        "type": "container",
+        "description": "",
+        "parentId": null
+      },
+      "logo": {
+        "id": "logo",
+        "name": "Logo",
+        "type": "svg",
+        "description": "",
+        "parentId": null,
+        "svgContent": "<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(1)\"><script>alert(2)</script><rect width=\"5\" height=\"5\" onclick=\"x()\"/></svg>"
+      }
+    },
+    "connections": {
+      "e1": {
+        "id": "e1",
+        "sourceId": "user",
+        "targetId": "api",
+        "label": "uses"
+      },
+      "e2": {
+        "id": "e2",
+        "sourceId": "api",
+        "targetId": "db",
+        "label": "reads"
+      }
+    },
+    "flows": {},
+    "iconLibrary": {}
+  },
+  "nodeLayouts": {
+    "user": {
+      "elementId": "user",
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 80
+    },
+    "api": {
+      "elementId": "api",
+      "x": 300,
+      "y": 0,
+      "width": 200,
+      "height": 80
+    },
+    "db": {
+      "elementId": "db",
+      "x": 600,
+      "y": 0,
+      "width": 200,
+      "height": 80
+    },
+    "logo": {
+      "elementId": "logo",
+      "x": 0,
+      "y": 200,
+      "width": 80,
+      "height": 80
+    }
+  },
+  "edgeLayouts": {},
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 1
+  }
+}

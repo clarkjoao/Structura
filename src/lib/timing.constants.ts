@@ -4,14 +4,6 @@
  * to ensure consistency across the codebase.
  */
 
-// Collaboration / WebSocket timeouts
-/** Ping interval for WebSocket heartbeat (25 seconds) */
-export const CLIENT_PING_INTERVAL_MS = 25_000;
-/** Timeout waiting for pong response before disconnecting (10 seconds) */
-export const CLIENT_PONG_TIMEOUT_MS = 10_000;
-/** Coalescing interval for batching patches (50ms) */
-export const BATCH_INTERVAL_MS = 50;
-
 // Persistence / Storage
 /** Debounce delay for persisting diagram state to storage (1 second) */
 export const PERSIST_DEBOUNCE_MS = 1_000;

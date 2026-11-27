@@ -30,12 +30,12 @@ import { bRun3 } from "./B-run3";
  * address a node that has children. Keep it.
  */
 export const GENERATED_DIAGRAMS: ReferenceDiagram[] = [
-  { name: "A-run1 C4 insurer", ir: aRun1 },
-  { name: "A-run2 C4 insurer", ir: aRun2 },
-  { name: "A-run3 C4 insurer", ir: aRun3 },
-  { name: "B-run1 AWS deployment", ir: bRun1 },
-  { name: "B-run2 AWS deployment", ir: bRun2 },
-  { name: "B-run3 AWS deployment", ir: bRun3 },
+  { name: "A-run1 C4 insurer", diagram: aRun1 },
+  { name: "A-run2 C4 insurer", diagram: aRun2 },
+  { name: "A-run3 C4 insurer", diagram: aRun3 },
+  { name: "B-run1 AWS deployment", diagram: bRun1 },
+  { name: "B-run2 AWS deployment", diagram: bRun2 },
+  { name: "B-run3 AWS deployment", diagram: bRun3 },
 ];
 
 export { aRun1, aRun2, aRun3, bRun1, bRun2, bRun3 };

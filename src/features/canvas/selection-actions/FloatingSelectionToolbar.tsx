@@ -9,7 +9,7 @@ import {
 } from "./floatingToolbarPlacement";
 
 /** A box in flow coordinates. */
-export interface FlowRect {
+interface FlowRect {
   x: number;
   y: number;
   width: number;

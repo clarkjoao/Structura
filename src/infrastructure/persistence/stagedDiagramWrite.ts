@@ -17,7 +17,7 @@ export interface StagedDiagramWrite {
   finalSegments: string[];
 }
 
-export const TEMP_FILE_SUFFIX = ".tmp";
+const TEMP_FILE_SUFFIX = ".tmp";
 
 /**
  * Returns the temp filename for a diagram, e.g. "abc123.json.tmp"
@@ -31,11 +31,4 @@ export function getTempFileName(diagramId: string): string {
  */
 export function isTempFile(name: string): boolean {
   return name.endsWith(TEMP_FILE_SUFFIX);
-}
-
-/**
- * Converts a temp filename back to its final form, e.g. "abc123.json.tmp" → "abc123.json"
- */
-export function getFinalFileName(tempName: string): string {
-  return tempName.slice(0, -TEMP_FILE_SUFFIX.length);
 }

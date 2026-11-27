@@ -119,7 +119,7 @@ export function svgNodeNameFromFile(file: File): string {
  * Read a dropped File into SVG markup (native SVG text, or PNG/JPG wrapped
  * with a base64 `<image>`).
  */
-export async function fileToSvgMarkup(file: File): Promise<string | null> {
+async function fileToSvgMarkup(file: File): Promise<string | null> {
   if (isSvgFile(file)) {
     try {
       return await readFileAsText(file);

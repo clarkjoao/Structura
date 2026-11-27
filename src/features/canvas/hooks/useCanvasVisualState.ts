@@ -94,6 +94,9 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
 
   // Clear the connection highlight when node selection changes so it doesn't persist.
   useEffect(() => {
+    // An edge click nulls the node selection in the same batch that gives the edge its
+    // highlight; that highlight is not stale.
+    if (selection.selectedNodeId === null && selection.selectedEdgeId !== null) return;
     clearHighlightFn();
     // Registers the handler once; see above.
     // eslint-disable-next-line react-hooks/exhaustive-deps

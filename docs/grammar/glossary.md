@@ -325,33 +325,6 @@ should not be merged.
 
 ---
 
-### Walkthrough
-
-**Status:** `removed` (the bounded context was removed in 2026-08; see
-  `docs/decisions/2026-08-26-remove-walkthroughs.md`)
-
-**Definition:** A curated or recorded sequence of steps across one or more
-Diagrams. Each step pointed at a Diagram and optionally at a Flow within
-that Diagram. The feature had a VCR-style player (prev/next, play, record)
-and a separate `Walkthroughs` Zustand store.
-
-**Reference (historical):** `Walkthrough` lived in
-  the original module was removed; the current one is `src/features/walkthrough/`.
-
-**Counterpoint (still applies if a future equivalent is rebuilt):**
-
-- **Not** a Customer Journey. Customer Journey is a UX concept
-  (persona × touchpoint × emotion) that Structura does not model today.
-  When that feature is added, the term *Journey* is free to use.
-- **Not** a BPMN process. Steps are pointers to diagrams, not activities
-  with gateways and timers.
-- **Not** a Version (Version is a variant of a single Diagram; a walkthrough is
-  a sequence across multiple).
-- **Not** a Flow (Flow is recorded within one Diagram; a walkthrough is
-  recorded across Diagrams, optionally invoking Flows).
-
----
-
 ## Part 5 — Auxiliary concepts
 
 ### IconStore
@@ -610,7 +583,6 @@ blocking defect.
 | 2 | `registryServiceId` (field) | unify with `serviceId` | 1 | shipped (PERSIST_SCHEMA_VERSION 11) — the field was live (used by plugin snapshots and custom-component template instancing); unification with `serviceId` removes a duplicate write path that caused `linkComponentToService` to silently miss the link. |
 | 3 | `serviceRegistry` / `serviceCatalog` (state, i18n, page) | `services` | 2 | shipped (`serviceRegistry`→`serviceCatalog` at schema 8; `serviceCatalog`→`services` at schema 14; route `/services`) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | shipped |
-| 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | shipped (PERSIST_SCHEMA_VERSION 10) |
 | 7 | `CustomComponentRepository.ts` | `customComponentTemplateStore.ts` | 4 | cosmetic, optional |
 | 8 | `features/icons/` (feature) | merged into `features/diagram/store/icon-store.ts` | 3 | `IconStore` is now the single source of truth for custom icons inside the diagram feature; `features/icons/` deleted; 7 import paths updated |

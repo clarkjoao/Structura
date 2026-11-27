@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import type { LayoutGraph } from "./contract";
 import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { layout, layoutElkGraph } from "./layoutEngine";
 import { measureReadability, totalReadability, type ReadabilityReport } from "./layoutReadability";
 import { measureRenderedReadability } from "./renderedEdgePath";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { labelsOf, REFERENCE_DIAGRAMS, edgesOf, fixtureGraph } from "./reference-diagrams";
 
 /**
  * Mermaid 12 parity experiment. Measurement only — nothing here changes what
@@ -93,9 +92,9 @@ interface Measured {
 
 async function measure(variant: Variant): Promise<Measured[]> {
   const out: Measured[] = [];
-  for (const { ir } of REFERENCE_DIAGRAMS) {
-    const labels = labelsOf(ir);
-    const base = irToLayoutGraph(ir);
+  for (const { diagram } of REFERENCE_DIAGRAMS) {
+    const labels = labelsOf(diagram);
+    const base = fixtureGraph(diagram);
     const input = variant.labels ? base : withoutLabels(base);
     const graph = await layoutElkGraph(input, variant.overrides);
     const result = await layout(input, variant.overrides);
@@ -104,11 +103,11 @@ async function measure(variant: Variant): Promise<Measured[]> {
     );
     out.push({
       elk: measureReadability(graph, { labels }),
-      generated: measureRenderedReadability(graph, ir.edges, {
+      generated: measureRenderedReadability(graph, edgesOf(diagram), {
         labels,
         handleOrder: readElkHandleOrder(graph),
       }),
-      autoLayout: measureRenderedReadability(graph, ir.edges, {
+      autoLayout: measureRenderedReadability(graph, edgesOf(diagram), {
         labels,
         handleOrder: result.handleOrder,
         cornersByEdgeId,

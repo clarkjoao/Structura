@@ -201,7 +201,7 @@ export async function installPluginFromCode(code: string): Promise<InstallPlugin
 }
 
 /** Deactivate: best-effort plugin cleanup, then host-forced unregistration of everything. */
-export async function deactivatePlugin(pluginId: string): Promise<void> {
+async function deactivatePlugin(pluginId: string): Promise<void> {
   const active = activePlugins.get(pluginId);
   if (!active) return;
   activePlugins.delete(pluginId);

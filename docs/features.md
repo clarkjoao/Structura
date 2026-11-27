@@ -205,8 +205,7 @@ and the wire protocol, [collab-protocol-v3.md](collab-protocol-v3.md).
 ## Services catalog
 
 A registry of services (name, description, repository, stack, owner, tags) that elements can
-link to. Sources: manual entry, GitHub and DefectDojo importers (enabled with
-`VITE_ENABLE_GITHUB_IMPORT` / `VITE_ENABLE_DEFECTDOJO`). Exported diagrams carry the services
+link to. Sources: manual entry and the GitHub and DefectDojo importers. Exported diagrams carry the services
 they reference and can relink them on import.
 
 ## AI assistant
@@ -222,11 +221,6 @@ IndexedDB. See [concepts/ai-integration.md](concepts/ai-integration.md).
 Install plugins from a local JavaScript file on the **Plugins** page, or build the app with
 plugins pre-installed. See [../plugins/README.md](../plugins/README.md) and
 [architecture/extension-points.md](architecture/extension-points.md).
-
-## Walkthroughs (experimental)
-
-Guided, multi-diagram walkthroughs. Disabled unless the build sets
-`VITE_ENABLE_WALKTHROUGHS=true`.
 
 ## Interface
 

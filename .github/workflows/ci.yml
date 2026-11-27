@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -34,22 +34,22 @@ jobs:
       - name: Check plugin generated files are in sync
         run: npm run plugins:sync-check
 
-  fallow:
-    name: Dead code and cycles
+  cycles:
+    name: Import cycles
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Block import cycles and new dead code
-        run: npm run fallow:check
+      - name: Block import cycles
+        run: npm run cycles:check
 
   typecheck:
     name: Type check
@@ -59,7 +59,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -76,7 +76,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -106,7 +106,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -134,7 +134,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -215,7 +215,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -287,7 +287,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -333,7 +333,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies and browser
@@ -363,6 +363,42 @@ jobs:
           path: perf-report.json
           if-no-files-found: ignore
 
+  e2e-smoke:
+    name: E2E smoke (Cypress)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      # npm ci also downloads the Cypress binary (postinstall).
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npx vite build
+
+      # Selection matrix, right-button context menu, editable edges and editor/viewer
+      # render parity: the canvas interactions and DOM-measured boxes with no jsdom
+      # equivalent.
+      - name: Run the smoke specs
+        run: |
+          npx vite preview --port 4173 --strictPort > /tmp/preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://localhost:4173/ > /dev/null && break; sleep 1; done
+          npm run cy:run:smoke
+
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -372,7 +408,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -396,7 +432,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: plugins/*/package-lock.json
 
@@ -407,6 +443,10 @@ jobs:
 
       - name: Example UI
         working-directory: plugins/structura-plugin-example-ui
+        run: npm ci --legacy-peer-deps && npm run typecheck
+
+      - name: Observability
+        working-directory: plugins/structura-plugin-observability
         run: npm ci --legacy-peer-deps && npm run typecheck
 
   opscr:
@@ -440,7 +480,7 @@ jobs:
       - uses: actions/setup-node@v6
         if: env.HAS_OPSCR == 'true'
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: |
             package-lock.json

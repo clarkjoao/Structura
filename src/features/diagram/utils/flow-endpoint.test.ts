@@ -3,7 +3,7 @@ import type { Component } from "../model/component.types";
 import type { Connection } from "../model/connection.types";
 import type { Flow, FlowStep } from "../model/flow.types";
 import {
-  endpointCallers,
+  endpointCallersByRoute,
   endpointLabel,
   findEndpointMismatch,
   resolveStepEndpoint,
@@ -126,20 +126,20 @@ describe("the scripts that exercise a route", () => {
   const RETRY = flow("f2", "Repetir", { a: { endpointId: "post" } });
 
   it("names every flow and step that calls it", () => {
-    expect(endpointCallers([CREATE, RETRY], "post")).toEqual([
+    expect(endpointCallersByRoute([CREATE, RETRY]).get("post")).toEqual([
       { flowId: "f1", flowName: "Criar link", stepId: "a" },
       { flowId: "f2", flowName: "Repetir", stepId: "a" },
     ]);
   });
 
   it("says nothing about a route nothing calls", () => {
-    expect(endpointCallers([CREATE, RETRY], "get")).toEqual([]);
+    expect(endpointCallersByRoute([CREATE, RETRY]).get("get")).toBeUndefined();
   });
 
   it("forgets a deleted step with nothing to clean up", () => {
     const without = flow("f1", "Criar link", { a: { componentId: "api" } });
 
-    expect(endpointCallers([without, RETRY], "post")).toEqual([
+    expect(endpointCallersByRoute([without, RETRY]).get("post")).toEqual([
       { flowId: "f2", flowName: "Repetir", stepId: "a" },
     ]);
   });

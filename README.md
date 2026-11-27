@@ -102,23 +102,23 @@ Optional features are switched on with `VITE_*` variables; copy [`.env.example`]
 live sessions:
 
 ```bash
-npm run server       # installs and starts server/ in dev mode
+npm run proxy        # installs and starts server/ in dev mode
 ```
 
 ### Useful scripts
 
-| Command                      | What it does                                           |
-| ---------------------------- | ------------------------------------------------------ |
-| `npm run dev`                | Vite dev server on port 8080                           |
-| `npm run build`              | Type check + production build into `dist/`             |
-| `npm run typecheck`          | TypeScript gate (app + Vite config)                    |
-| `npm test`                   | Unit tests (Vitest)                                    |
-| `npm run lint`               | ESLint                                                 |
-| `npm run format:check`       | Prettier check (`npm run format` to fix)               |
-| `npm run cy:run:stress`      | Cypress canvas stress suite                            |
-| `npm run plugins:sync-check` | Verifies the LeanIX plugin's generated files are fresh |
-| `npm run fallow:check`       | Import cycles and new dead code (CI gate)              |
-| `npm run media:capture`      | Regenerates the README screenshots and demo recording  |
+| Command                      | What it does                                                                |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `npm run dev`                | Vite dev server on port 8080                                                |
+| `npm run build`              | Type check + production build into `dist/`                                  |
+| `npm run typecheck`          | TypeScript gate (app + Vite config)                                         |
+| `npm test`                   | Unit tests (Vitest)                                                         |
+| `npm run lint`               | ESLint                                                                      |
+| `npm run format:check`       | Prettier check (`npm run format` to fix)                                    |
+| `npm run cy:run:stress`      | Cypress canvas stress suite                                                 |
+| `npm run plugins:sync-check` | Verifies the plugins' and the VSCode extension's generated copies are fresh |
+| `npm run cycles:check`       | Import cycles (CI gate)                                                     |
+| `npm run media:capture`      | Regenerates the README screenshots and demo recording                       |
 
 ## Plugins
 

@@ -61,7 +61,7 @@ export interface EdgeBuildParams {
   edgeLayouts?: Record<string, EdgeLayout>;
 }
 
-export function toMarkerType(
+function toMarkerType(
   marker: string | undefined,
 ): MarkerType.Arrow | MarkerType.ArrowClosed | undefined {
   if (!marker || marker === EdgeMarker.None) return undefined;
@@ -197,4 +197,3 @@ export function buildEdge(
 
 // Lives with the rest of what the canvas shows, in the pure view module; kept
 // exported here for the editor's existing imports.
-export { filterVisibleConnections } from "../../core/resolveViewSnapshot";

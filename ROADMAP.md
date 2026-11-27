@@ -65,7 +65,7 @@ This document reflects the current direction of Structura. Items are subject to 
 - [ ] Structurizr DSL import/export
 - [ ] Code-level (C4 Level 4) diagram support
 - [ ] Cross-diagram reference node (link a node to a component in another diagram, with broken-reference detection)
-- [ ] Semantic panel elements: AWS Account, Control Plane, Service Mesh; Step Functions and request/response contract nodes
+- [ ] Semantic panel elements: AWS Account, Control Plane, Service Mesh; request/response contract nodes
 - [ ] Fix draw.io export edge-style mapping (smoothstep/bezier styles, `animated` flag, custom edge colors are currently lost)
 
 ### Documentation & Decisions

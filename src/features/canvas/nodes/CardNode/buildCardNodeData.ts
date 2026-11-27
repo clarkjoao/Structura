@@ -60,6 +60,7 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
     serviceName: comp.serviceId ? ctx.services[comp.serviceId]?.name : undefined,
     externalLinks: comp.externalLinks,
     linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
+    linkedDiagramId: refDiagramId,
     // A reader names the linked diagram but cannot go there.
     onDrillDown:
       isPlaying || isRecording || ctx.isReader || !linkedDiagramName
@@ -117,15 +118,17 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
  * Compare mode is excluded: it redraws both revisions of a card, and pinning
  * either to the other's laid-out height would misreport the diff.
  *
- * The editor applies it only while a flow plays, the one time its own card
- * hides content. Otherwise the editor is where the box comes from: React Flow
- * measures the card and writes the height back, so a floor there is fed by its
- * own measurement and can only rise — a card that grew once (a long
- * description while selected) never shrank back.
+ * Both surfaces declare it: the editor too, or it draws the card at its content
+ * height, writes that back over the laid-out one and routes every edge off the
+ * corridor the viewer still follows (RT-041). The editor's own measurement is
+ * what feeds this floor, so the two ways it could only ever rise are closed
+ * where they happen: an expanded card (selected, highlighted) is not written
+ * back (`expandedCards`), and a card whose content was edited drops the floor
+ * for as long as it is on screen (`CardNode`), so it shrinks to what it now
+ * holds and that is what gets written.
  */
 function laidOutMinHeight(comp: Component, ctx: NodeBuildContext): number | undefined {
   if (ctx.isCompareMode) return undefined;
-  if (!ctx.isReader && !ctx.isPlaying) return undefined;
   const height = ctx.resolvedNodeLayouts?.[comp.id]?.height;
   return typeof height === "number" ? height : undefined;
 }

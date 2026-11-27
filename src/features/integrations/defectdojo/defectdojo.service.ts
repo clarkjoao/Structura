@@ -52,7 +52,7 @@ function getStoredDefectDojoBaseUrl(): string {
   }
 }
 
-export function buildDefectDojoProductLink(productId: number | string, baseUrl?: string): string {
+function buildDefectDojoProductLink(productId: number | string, baseUrl?: string): string {
   const normalizedBase = (baseUrl ?? getStoredDefectDojoBaseUrl()).replace(/\/+$/, "");
   if (!normalizedBase) return "";
   return `${normalizedBase}/product/${productId}`;

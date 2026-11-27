@@ -35,7 +35,7 @@ export function isCanvasOverlayOpen(flags: CanvasKeydownModeFlags): boolean {
   return Boolean(flags.isSearchOpen || flags.isCommandPaletteOpen) || isCanvasOverlayLayerOpen();
 }
 
-export function isCanvasOverlayLayerOpen(): boolean {
+function isCanvasOverlayLayerOpen(): boolean {
   if (typeof document === "undefined") return false;
   return document.querySelector('[data-canvas-overlay="open"]') !== null;
 }
@@ -79,7 +79,7 @@ export function handleAutoLayoutShortcut(
   if (!isModKeyPressed(event) || !event.shiftKey || event.altKey) return false;
   if (!keyMatchesLetterOrCode(event, KEY.L, "KeyL")) return false;
   claimShortcutEvent(event);
-  if (!isCanvasEditingLocked(flags) && !flags.isCanvasLocked) {
+  if (!isCanvasEditingLocked(flags) && !flags.isCanvasLocked && !isCanvasOverlayOpen(flags)) {
     onAutoLayout?.();
   }
   return true;

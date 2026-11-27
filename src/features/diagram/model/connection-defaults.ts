@@ -103,7 +103,7 @@ export function resolveConnectionSemantics(
   };
 }
 
-export const DIRECTION_MARKERS: Record<
+const DIRECTION_MARKERS: Record<
   ConnectionDirection,
   { markerStart: EdgeMarker; markerEnd: EdgeMarker }
 > = {
@@ -129,8 +129,4 @@ export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnecti
     markerEnd: s?.markerEnd ?? fromDirection.markerEnd,
     animated: s?.animated ?? fromIntent?.animated ?? false,
   };
-}
-
-export function getIntentDefault(intent: ConnectionIntent): ConnectionStyle {
-  return { ...INTENT_DEFAULTS[intent] };
 }

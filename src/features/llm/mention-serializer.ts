@@ -1,6 +1,6 @@
 import type { ActiveMention, MentionItem } from "./types";
 
-export function serializeMentionItem(item: MentionItem): string {
+function serializeMentionItem(item: MentionItem): string {
   return item.serialized;
 }
 

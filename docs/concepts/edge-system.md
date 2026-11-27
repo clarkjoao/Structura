@@ -30,33 +30,34 @@ to `ConnectionStyle` in the meantime.
 
 - `useCanvasEdges` builds React Flow edges from connections + flow/compare
   state; `connectionDerivations.ts` derives handles, labels, and markers.
-- `CustomEdge.tsx` (+ `useCustomEdge`) is the single edge renderer:
-  geometry from `edgeGeometry.ts`, segment dragging and waypoint editing via
-  `edgeBuilding.ts`, draggable labels (`useLabelDrag`), payload overlays
-  (`EdgePayloadOverlay`), and flow-playback particles (`EdgeParticle` on
-  `EdgeSvgLayer`).
+- `EditableEdge.tsx` is the single edge renderer (`FarEdge.tsx` is its
+  low-detail stand-in): path geometry from `edges/geometry/`
+  (`paths.ts`, `orthogonal.ts`, `projection.ts`), segment dragging and
+  waypoint editing in `edges/interaction/` (`useSegmentDrag`,
+  `useControlPoints`), draggable labels (`useEdgeLabelDrag`), and overlays in
+  `edges/overlays/` (`EdgePayloadOverlay`, flow-playback `EdgeParticle`).
 - Handle reordering (`useCanvasHandleReorder`) lets users control where edges
   attach on a node; the order persists in `Component.handleOrder`.
 
 Unlike nodes, there is **one** edge renderer with internal branching, not a
 descriptor registry. That is fine while all edges are "labeled arrows", and
-wrong the moment VSM (timeline ladders), Step Functions (choice/parallel
-semantics), or Saga (compensation arrows) arrive — which is why the edge
+wrong the moment VSM (timeline ladders) or Saga (compensation arrows) arrive — which is why the edge
 redesign precedes those roadmap items.
 
 ## Where edge behavior belongs
 
 - Semantic meaning of a connection (intent, transport) → model + inspector
   panels, never inferred from styling.
-- Geometry/routing math → `edgeGeometry.ts` / `edgeBuilding.ts` (pure,
-  tested: `edgeBuilding.segment-drag.test.ts`, `reset-edge-waypoints.test.ts`).
+- Geometry/routing math → `edges/geometry/` (pure, tested:
+  `orthogonal.test.ts`, `geometry.test.ts`) and `reset-edge-waypoints.ts` (tested
+  by `reset-edge-waypoints.test.ts`).
 - Per-type visuals (future) → an `EdgeTypeDescriptor` registry mirroring the
   node system. Design it in the edge-redesign spec rather than growing more
-  branches inside `CustomEdge`.
+  branches inside `EditableEdge`.
 
 ## Export mapping
 
-`lib/export-service/edge-builder.ts` maps connections (including waypoints
+`lib/export-core/edge-builder.ts` maps connections (including waypoints
 and markers) to draw.io mxGraph edges; Mermaid export flattens them to arrow
 syntax. Semantic fields (`intent`, `transportPreset`) currently do not
 round-trip through any format — a known loss recorded in

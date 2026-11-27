@@ -32,10 +32,6 @@ for (const cat of AZURE_CATEGORIES) {
   _categoryMap.set(cat.id, cat);
 }
 
-export const AZURE_CATEGORY_MAP = _categoryMap;
-
-export const AZURE_CATEGORY_ID_GENERAL = "azure-general" as const satisfies AzureCategoryId;
-
 export function isAzureType(type: string): type is AzureCategoryId {
   return type.startsWith("azure-");
 }

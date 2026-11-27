@@ -31,9 +31,6 @@ import {
 import { buildPersistStoragePayload, createPersistConfig, PERSIST_KEY } from "./persist.config";
 import { loadSeedWorkspace, type FreshWorkspace } from "./seedWorkspace";
 
-export type { AppState, DiagramSnapshot } from "./store.types";
-export type { ClipboardEntry, DiagramStore } from "./store.types";
-
 let settleHydration: (error?: unknown) => void = () => {};
 
 /**
@@ -149,23 +146,8 @@ export async function flushWorkspaceToBrowserStorageNow(
   return true;
 }
 
-export function updateDiagramDescription(diagramId: string, description: string): void {
-  useDiagramStore.getState().updateDiagramDescription(diagramId, description);
-}
-
 export function saveUserTemplate(template: UserTemplate): void {
   useDiagramStore.getState().saveUserTemplate(template);
-}
-
-export function updateUserTemplate(
-  id: string,
-  patch: Partial<Pick<UserTemplate, "name" | "description" | "category">>,
-): void {
-  useDiagramStore.getState().updateUserTemplate(id, patch);
-}
-
-export function deleteUserTemplate(id: string): void {
-  useDiagramStore.getState().deleteUserTemplate(id);
 }
 
 const pickFromStore = createStableSlice<DiagramStore>();
@@ -274,78 +256,6 @@ const selectDiagramActions = pickFromStore([
   "deleteUserTemplate",
 ]);
 
-const selectComponentActions = pickFromStore([
-  "addComponent",
-  "addComponentConnectedFrom",
-  "addSharedRef",
-  "routeConnectionThroughRef",
-  "updateComponent",
-  "batchUpdateComponents",
-  "removeComponent",
-  "removeElements",
-  "groupNodes",
-  "ungroupNodes",
-  "updateHandleOrder",
-  "addExternalLink",
-  "updateExternalLink",
-  "removeExternalLink",
-]);
-
-const selectConnectionActions = pickFromStore([
-  "addConnection",
-  "updateConnection",
-  "removeConnection",
-  "swapConnectionDirection",
-]);
-
-const selectLayoutActions = pickFromStore([
-  "updateNodeLayout",
-  "batchUpdateNodeLayouts",
-  "updateViewport",
-  "setEdgeControlPoints",
-  "addEdgeControlPoint",
-  "removeEdgeControlPoint",
-  "resetEdgeControlPoints",
-  "setEdgeLabelOffset",
-  "bringToFront",
-  "sendToBack",
-  "setNodeZIndex",
-  "alignNodes",
-  "distributeNodes",
-  "fitGroupToChildren",
-  "applyAutoLayout",
-  "batchCommitNodeDrag",
-  "setParent",
-]);
-
-const selectVersionActions = pickFromStore([
-  "addVersion",
-  "duplicateVersion",
-  "removeVersion",
-  "mergeVersionIntoBase",
-  "setVersionStatus",
-  "carryActiveVersionKey",
-  "removeVersionByKey",
-  "setActiveVersionByKey",
-  "keepVersionCopy",
-  "takeBaseVersion",
-  "setActiveVersion",
-  "setCompareVersion",
-  "renameVersion",
-  "addComponentToVersion",
-  "removeComponentFromVersion",
-  "addConnectionToVersion",
-  "removeConnectionFromVersion",
-  "updateVersionNodeLayout",
-]);
-
-const selectClipboardActions = pickFromStore([
-  "copyToClipboard",
-  "pasteFromClipboard",
-  "clearClipboard",
-  "hydrateClipboard",
-]);
-
 const selectIconActions = pickFromStore([
   "addIcon",
   "removeIcon",
@@ -364,16 +274,6 @@ const selectServiceActions = pickFromStore([
 export const useDiagramActions = () => useDiagramStore(selectDiagramActions);
 
 // --- Domain-scoped action hooks ---
-
-export const useComponentActions = () => useDiagramStore(selectComponentActions);
-
-export const useConnectionActions = () => useDiagramStore(selectConnectionActions);
-
-export const useLayoutActions = () => useDiagramStore(selectLayoutActions);
-
-export const useVersionActions = () => useDiagramStore(selectVersionActions);
-
-export const useClipboardActions = () => useDiagramStore(selectClipboardActions);
 
 export const useIconActions = () => useDiagramStore(selectIconActions);
 

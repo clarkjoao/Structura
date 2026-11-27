@@ -23,7 +23,7 @@ import type {
 /** How many entries a room keeps for resume. Older resumes get the snapshot. */
 export const ENTRY_LOG_LIMIT = 2_000;
 /** Bound on remembered removals; the oldest are forgotten first. */
-export const TOMBSTONE_LIMIT = 10_000;
+const TOMBSTONE_LIMIT = 10_000;
 /** A closed room lingers this long so late reconnects learn it closed rather than vanished. */
 export const CLOSED_ROOM_TTL_MS = 60_000;
 

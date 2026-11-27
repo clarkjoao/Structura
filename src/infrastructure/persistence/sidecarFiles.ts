@@ -3,14 +3,14 @@
  *
  * A sidecar is a `<id>.<type>.json` file written into the same directory as the
  * diagrams of the folder it belongs to, by a feature that has something to say
- * about those diagrams. A walkthrough is the first; the shape is deliberately
+ * about those diagrams. The walkthrough was the first (that module has since been removed); the shape is deliberately
  * open so the next one costs a line here.
  *
  * The workspace scan consults this list *before opening a file*, which is what
  * keeps boot cheap — and what makes a workspace scan cleanly whether or not the
  * feature that writes these files is enabled, loaded, or still in the codebase.
  *
- * **Leave `.walkthrough.json` here even if walkthroughs are removed.** A folder
+ * **Leave `.walkthrough.json` here: the walkthrough module was removed.** A folder
  * someone used walkthroughs in still holds those files, and taking the suffix
  * off this list would make every one of them surface as a corrupt diagram in
  * the workspace merge dialog. This list is a promise to files already written,

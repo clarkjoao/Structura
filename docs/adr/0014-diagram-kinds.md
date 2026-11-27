@@ -5,9 +5,9 @@
 ## Context
 
 Every Structura diagram is freehand. A request for a guided, standardised journey/data-flow
-diagram (BPMN-inspired, see `openspec/changes/guided-flow-diagram`) is the first time the editor
+diagram (BPMN-inspired, see `openspec/changes/archive/2026-11-22-guided-flow-diagram`) is the first time the editor
 has had to behave differently depending on what *kind* of diagram is open. The vision
-(`docs/architecture/vision.md` §8) lists "diagram profiles" (VSM, Step Functions, Saga) as a
+(`docs/architecture/vision.md` §8) lists "diagram profiles" (VSM, Saga) as a
 later move, and §9 left open whether a profile is a plugin or a bundle of node types, validators
 and palette entries.
 

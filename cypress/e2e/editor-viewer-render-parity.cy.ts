@@ -2,9 +2,10 @@
  * Rendered parity: `/model/:id` and `/viewer?diagramId=:id` have to draw the
  * same picture, in pixels.
  *
- * `core/readWriteParity.test.tsx` already compares the two *projections*, and it
- * passes — both produce identical node objects, because neither carries a
- * height. A card is sized by its content, and the reader used to zero `services`
+ * `core/readWriteParity.test.tsx` compares the two *projections*, the height a
+ * card declares (`laidOutMinHeight`) included — the editor once left it off
+ * and drew the card at its content height (RT-041). But a card is sized by its
+ * content in the DOM, and the reader used to zero `services`
  * and `allDiagrams` (`buildReadNodeContext`), so the service chip and the
  * "explore inside" row vanished and the same card came out ~70px shorter. The
  * reader now gets the names (`ReaderCatalog`), and the card still declares the

@@ -84,7 +84,7 @@ interface LocalRoom {
   cursors: Map<string, CursorEntry>;
 }
 
-export function hashToken(token: string): string {
+function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 

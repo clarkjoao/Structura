@@ -10,8 +10,9 @@ import type { ViewBox, ViewLayoutGraph, ViewLayoutResult } from "../opscr-mappin
 
 /**
  * Mirrors `ELK_OPTIONS_INTERACTIVE` in the host's
- * `src/features/canvas/layout/layoutEngine.ts`, which plugins and the VSCode extension
- * cannot import. Keep them in step when the host's change.
+ * `src/features/canvas/layout/layoutEngine.ts`, which the VSCode extension cannot import
+ * (plugins use it through `api.layout`). Keep them in step when the host's change
+ * (`elkOptions.parity.test.ts`).
  */
 const ELK_OPTIONS: Readonly<Record<string, string>> = {
   "elk.algorithm": "layered",

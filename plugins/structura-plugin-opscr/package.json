@@ -16,7 +16,6 @@
     "build-skill:check": "node scripts/build-skill.mjs --check"
   },
   "dependencies": {
-    "elkjs": "^0.12.0",
     "yaml": "^2.9.1"
   },
   "devDependencies": {

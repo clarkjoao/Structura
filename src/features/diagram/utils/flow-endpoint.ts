@@ -67,25 +67,6 @@ export interface EndpointCall {
 }
 
 /**
- * Every step, in every script, that calls this route.
- *
- * Walked on each request rather than kept anywhere. The flows are tens of steps
- * long and this is asked once per endpoint node, so the walk is cheaper than
- * the bookkeeping an index would need to stay honest through a deletion.
- */
-export function endpointCallers(flows: readonly Flow[], endpointId: string): EndpointCall[] {
-  const calls: EndpointCall[] = [];
-  for (const flow of flows) {
-    walkFlow(flow, (step) => {
-      if (step.endpointId === endpointId) {
-        calls.push({ flowId: flow.id, flowName: flow.name, stepId: step.id });
-      }
-    });
-  }
-  return calls;
-}
-
-/**
  * Every route called by any of these scripts, indexed by route.
  *
  * One walk for the whole diagram rather than one per route: the canvas asks

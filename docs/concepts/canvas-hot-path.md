@@ -96,7 +96,8 @@ into history + collab. Measured: one arrow-key nudge used to be 800+
 ### 5. Identity caches for arrays React Flow owns
 
 React Flow remounts a layer when it receives a new array of new objects.
-`buildNode` / `buildEdge` allocate nested objects (`data`, `style`, markers)
+The node and edge builders (`useCanvasNodes`, `buildEdge` in
+`edges/data/buildEdges.ts`) allocate nested objects (`data`, `style`, markers)
 every call even when contents did not move.
 
 | Do | Don't |

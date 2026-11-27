@@ -42,7 +42,6 @@ so sync machinery exists to reconcile them:
   spurious writes.
 - `WorkspaceMergeDialog` / `DisconnectConfirmDialog` — the user decides on
   conflicts; the app never silently discards either side.
-- `merge-custom-component-templates.ts` — semantic merging for templates.
 - `folderSync.ts` — shared `FolderSyncResult` + `isValidFolderId` (skips
   reserved names like `node_modules` / `dist` during root scans).
 

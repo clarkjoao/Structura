@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import type { Node, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
+import { holdCardExpanded } from "../nodes/CardNode/expandedCards";
 import { useNodeDragParenting } from "./useNodeDragParenting";
 
 /**
@@ -181,6 +182,42 @@ describe("dimension flush", () => {
 
     expect(batchUpdateNodeLayouts).toHaveBeenCalledWith([
       { elementId: "n-3", position: { x: 30, y: 0 }, dimensions: { width: 1860, height: 960 } },
+    ]);
+  });
+
+  /**
+   * A card declares its stored height as a floor on both surfaces (RT-041), so
+   * a selected card's expansion written back would become its height for good.
+   */
+  it("does not write an expanded card's size back, and writes it once it rests", async () => {
+    const { nodes, diagram } = buildFixture();
+    diagram.nodeLayouts["n-3"] = { elementId: "n-3", x: 30, y: 0, width: 260, height: 180 };
+    const batchUpdateNodeLayouts = vi.fn();
+
+    const { result } = renderHook(() =>
+      useNodeDragParenting({
+        diagram,
+        nodes,
+        updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts,
+        batchCommitNodeDrag: vi.fn(),
+      }),
+    );
+
+    const release = holdCardExpanded("n-3");
+    act(() => {
+      result.current.onNodesChange([dimensionChange("n-3", 260, 320)]);
+    });
+    await drainAnimationFrame();
+    expect(batchUpdateNodeLayouts).not.toHaveBeenCalled();
+
+    release();
+    act(() => {
+      result.current.onNodesChange([dimensionChange("n-3", 260, 200)]);
+    });
+    await drainAnimationFrame();
+    expect(batchUpdateNodeLayouts).toHaveBeenCalledWith([
+      { elementId: "n-3", position: { x: 30, y: 0 }, dimensions: { width: 260, height: 200 } },
     ]);
   });
 });

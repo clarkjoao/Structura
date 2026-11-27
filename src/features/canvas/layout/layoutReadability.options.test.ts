@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
+import type { LayoutGraph } from "./contract";
 import { layoutElkGraph } from "./layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { measureReadability, totalReadability } from "./layoutReadability";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { fixtureGraph, labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 /**
  * Comparison harness for layout options.
@@ -85,9 +86,9 @@ const SANITY_CHECK: Candidate = {
 
 async function measureCandidate(candidate: Candidate) {
   const reports = [];
-  for (const { name, ir } of REFERENCE_DIAGRAMS) {
-    const graph = await layoutElkGraph(irToLayoutGraph(ir), candidate.options);
-    reports.push({ name, report: measureReadability(graph, { labels: labelsOf(ir) }) });
+  for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+    const graph = await layoutElkGraph(fixtureGraph(diagram), candidate.options);
+    reports.push({ name, report: measureReadability(graph, { labels: labelsOf(diagram) }) });
   }
   return { reports, total: totalReadability(reports.map((entry) => entry.report)) };
 }
@@ -119,10 +120,12 @@ describe("layout option comparison", () => {
 
   it("keeps generating every diagram under every candidate", async () => {
     for (const candidate of [...CANDIDATES, SANITY_CHECK]) {
-      for (const { name, ir } of REFERENCE_DIAGRAMS) {
-        const graph = await layoutElkGraph(irToLayoutGraph(ir), candidate.options);
+      for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+        const graph = await layoutElkGraph(fixtureGraph(diagram), candidate.options);
         const report = measureReadability(graph);
-        expect(report.nodeCount, `${candidate.name} / ${name}`).toBe(ir.nodes.length);
+        expect(report.nodeCount, `${candidate.name} / ${name}`).toBe(
+          Object.keys(diagram.snapshot.components).length,
+        );
       }
     }
   });
@@ -135,33 +138,39 @@ describe("layout option comparison", () => {
    * boundary is exactly that shape.
    */
   it("measures separateConnectedComponents on a graph that has components to separate", async () => {
-    const split: import("@/features/llm/ir/ir.types").DiagramIR = {
-      type: "aws-deployment",
+    const leaf = (id: string, name: string): LayoutGraph["nodes"][number] => ({
+      id,
+      parentId: null,
+      sortKey: `container\u0000${name}`,
+      width: DEFAULT_NODE_W,
+      height: DEFAULT_NODE_H,
+    });
+    const split: LayoutGraph = {
       nodes: [
-        { id: "a", semanticType: "container", name: "A", parentId: null, tier: "compute" },
-        { id: "b", semanticType: "container", name: "B", parentId: null, tier: "data" },
-        { id: "c", semanticType: "container", name: "C", parentId: null, tier: "compute" },
-        { id: "d", semanticType: "container", name: "D", parentId: null, tier: "data" },
+        leaf("a", "A"),
+        leaf("b", "B"),
+        leaf("c", "C"),
+        leaf("d", "D"),
+        // An empty boundary keeps the size it is given.
         {
           id: "lonely-vpc",
-          semanticType: "aws-vpc",
-          name: "Standby",
           parentId: null,
-          isBoundary: true,
-          tier: "edge",
+          sortKey: "panel\u0000Standby",
+          width: 360,
+          height: 200,
         },
       ],
       edges: [
-        { id: "s1", sourceId: "a", targetId: "b", label: "" },
-        { id: "s2", sourceId: "c", targetId: "d", label: "" },
+        { id: "s1", sourceId: "a", targetId: "b" },
+        { id: "s2", sourceId: "c", targetId: "d" },
       ],
     };
 
     const on = measureReadability(
-      await layoutElkGraph(irToLayoutGraph(split), { "elk.separateConnectedComponents": "true" }),
+      await layoutElkGraph(split, { "elk.separateConnectedComponents": "true" }),
     );
     const off = measureReadability(
-      await layoutElkGraph(irToLayoutGraph(split), { "elk.separateConnectedComponents": "false" }),
+      await layoutElkGraph(split, { "elk.separateConnectedComponents": "false" }),
     );
 
     console.info(

@@ -4,7 +4,7 @@
  * server serves both), and it starts by deleting every diagram it finds — with the real
  * storage, those would be the user's.
  */
-export class MemoryStorage implements Storage {
+class MemoryStorage implements Storage {
   private readonly items = new Map<string, string>();
 
   get length(): number {

@@ -35,11 +35,9 @@ export const PERSIST_KEY = "diagram-store";
 
 export const PERSIST_SCHEMA_VERSION = 16;
 
-export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
-
 export type PersistedDiagramStoreSlice = ReturnType<typeof partializeState>;
 
-export function partializeState(state: DiagramStore) {
+function partializeState(state: DiagramStore) {
   return {
     diagrams: state.diagrams,
     folders: state.folders,

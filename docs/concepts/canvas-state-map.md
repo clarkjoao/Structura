@@ -55,10 +55,9 @@ are listed separately.
 | `useSharedRevealStore` | `canvas/shared/useSharedRevealStore.ts` | `useCanvasGraphState`, `useReadDiagramFlow` | `SharedLayer` | no |
 | `useElementPresetStore` | `element-presets/store/element-presets.store.ts` | `useCatalogDrop`, `useCanvasCatalogIndex`, `useCanvasDropTarget` (via `useElementPresetLibrary`) | `CanvasOverlays` (save preset), presets UI, file-system boot | yes |
 | `useCanvasPreferencesStore` | `canvas/preferences/canvas-preferences.store.ts` | `Canvas` (`showMiniMap`), event handlers and effects (scroll mode), catalog, panels, view options | view options, catalog | yes (browser preference) |
-| `useCanvasSelectionStore` | `canvas/hooks/useCanvasSelectionStore.ts` | `useCanvasSelection` (→ `useCanvasVisualState`), `pointerFunnel`, `useCanvasEventHandlers`, panels, flow panels, `llm/ir/apply-ir.ts` | the same | no |
+| `useCanvasSelectionStore` | `canvas/hooks/useCanvasSelectionStore.ts` | `useCanvasSelection` (→ `useCanvasVisualState`), `pointerFunnel`, `useCanvasEventHandlers`, panels, flow panels | the same | no |
 | `useTextToolStore` | `canvas/text/textLayer.store.ts` | `useTextLayer` (Canvas, via `useTextLayerSelectionGuard`), `useCanvasStore`, `useCanvasGraphState`, `useCatalogInsert` | `useTextLayer`, `useCatalogInsert` | no |
 | `useFlowViewStore` | `canvas/flow/useFlowViewStore.ts` | `useFlowState`, `FlowPanel`, `FlowScriptPanel`, `useFlowRecording` | the flow panels | no |
-| `useWalkthroughStore` | `walkthrough/store/walkthrough.store.ts` | not on the canvas path (walkthrough pages) | walkthrough pages | yes |
 
 Per-instance stores built by hand (not Zustand), all read by subscription so a
 change re-renders only the members whose answer changed:
@@ -104,7 +103,7 @@ Not stores, but state the canvas holds in React and passes down:
 | `showVersions`, `focusTitleTrigger`, `reactFlowWrapperRef` | `useCanvasController` | handed to `useCanvasInteraction` and back to `Canvas` |
 | `showSearch`, `showDiagramSidebar`, `showCommandPalette` | `useCanvasDiagramNavigation` | sidebar can be controlled from props |
 | highlight, context menus, quick insert, tag filter, inline editor ids | `useCanvasVisualState` | one object, rebuilt when any of them changes |
-| `isChatOpen`, `hasUnread` | `useCanvasChat` (in `Canvas`) | chat chrome |
+| `isOpen`, `hasUnread` | `useCanvasChat` (in `Canvas`) | chat chrome |
 | `templateNodeId` | `Canvas` | the save-as-preset dialog; held by `Canvas` so it outlives an empty canvas, as before |
 | `localNodesRef` | `useCanvasInteraction` | the drag copy; see `useLocalNodes` (sharp edge) |
 
@@ -123,7 +122,7 @@ Not stores, but state the canvas holds in React and passes down:
 | "Select the node just inserted" | was one callback in `Canvas` and one in `useCanvasInteraction` | **one hook now** (`useSelectInsertedNodes`) |
 | `useReactFlow()`, `useResolvedComponents()` | the controller, and the chrome pieces that need them | same store, same value; a subscription per reader, not a second source |
 
-The UI-flag stores (`catalogUi`, `sharedReveal`, `textLayer`, `flowView`) have
+The UI-flag stores (`catalogUi`, `useSharedRevealStore`, `textLayer`, `useFlowViewStore`) have
 disjoint readers and writers: no two of them are read together by the same
 component, and none of them duplicates another store's fact. Merging any two
 would widen each subscriber's store without removing a source of truth.
@@ -166,7 +165,7 @@ left as follow-ups with the reason.
    editors stop rebuilding the object the selection consumers read. This is
    the "Canvas re-renders on selection" item (A4.3 of the audit): a performance
    project, measure first.
-9. Not proposed. Merging the UI-flag stores (`catalogUi`, `sharedReveal`,
-   `textLayer`, `flowView`): no overlap to remove (see above).
+9. Not proposed. Merging the UI-flag stores (`catalogUi`, `useSharedRevealStore`,
+   `textLayer`, `useFlowViewStore`): no overlap to remove (see above).
 10. Product decision, not a refactor. One source of truth for selection
     (`useCanvasSelectionStore` vs React Flow's `selected`).

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Sync the host's framework-agnostic opscr libraries into this plugin, as the single source
- * of truth for how an opscr workspace is drawn and laid out.
+ * Sync the host's framework-agnostic opscr library into this plugin, as the single source
+ * of truth for how an opscr workspace is drawn.
  *
- * Copies every non-test file of `src/lib/opscr-mapping` and `src/lib/opscr-layout` from the
- * host into `src/generated/<name>/` here, verbatim + a DO-NOT-EDIT banner. The plugin is a
- * separate Vite IIFE bundle with no `@` alias, so it cannot import the host directly — the
- * same mechanism the LeanIX plugin uses for `export-core`. The folders stay siblings, so the
- * layout's `../opscr-mapping` import resolves the same way here.
+ * Copies every non-test file of `src/lib/opscr-mapping` from the host into
+ * `src/generated/<name>/` here, verbatim + a DO-NOT-EDIT banner. The plugin is a separate Vite
+ * IIFE bundle with no `@` alias, so it cannot import the host directly — the same mechanism the
+ * LeanIX plugin uses for `export-core`. Layout is not copied: the plugin lays out with the
+ * host's engine through `api.layout` (API 1.19).
  *
  *   node scripts/sync-shared.mjs          # write the generated files
  *   node scripts/sync-shared.mjs --check  # fail if any is stale
@@ -17,7 +17,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const LIBS = ["opscr-mapping", "opscr-layout"];
+const LIBS = ["opscr-mapping"];
 const sourceDir = (lib) => resolve(here, "../../../src/lib", lib);
 const targetDir = (lib) => resolve(here, "../src/generated", lib);
 

@@ -459,17 +459,13 @@ describe("round trip with recorded flows", () => {
   });
 });
 
-describe("walkthrough scenes on the derived flow", () => {
+describe("a flow reference on the derived flow", () => {
   it("keep playing the updated sequence after an insert", () => {
     const h = guidedHarness();
     const a = h.run("guided.next", [h.startId])!;
     h.rename(a, "Paga");
-    // A scene is a diagram id and a flow id; the reader looks the flow up by them.
-    const scene: import("@/features/walkthrough/model/walkthrough.types").WalkthroughStepRef = {
-      id: "scene-1",
-      diagramId: h.diagramId,
-      flowId: h.flow()!.id,
-    };
+    // A flow is looked up by a diagram id and a flow id.
+    const scene = { diagramId: h.diagramId, flowId: h.flow()!.id };
     const inserted = h.run("guided.next", [h.startId])!;
     h.rename(inserted, "Confirma");
     const played = h.store.getState().diagrams[scene.diagramId]!.snapshot.flows[scene.flowId]!;

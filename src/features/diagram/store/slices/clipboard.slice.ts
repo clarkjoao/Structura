@@ -142,6 +142,13 @@ export const clipboardSlice = (
         if (existing && newParent && !canContain(newParent.type, existing.type)) continue;
         if (existing) existing.parentId = newParentId;
       }
+      // Rebase against the parents' canvas-space positions as pasted: a parent
+      // rebased earlier in clipboard order must not shift its children twice.
+      const pastedAbsolute: Record<string, { x: number; y: number }> = {};
+      for (const newId of Object.values(idMap)) {
+        const layout = activeNodeLayouts[newId];
+        if (layout) pastedAbsolute[newId] = { x: layout.x, y: layout.y };
+      }
       state.clipboard.components.forEach((originalComponent) => {
         const newComponentId = idMap[originalComponent.id];
         if (!newComponentId) return;
@@ -154,7 +161,7 @@ export const clipboardSlice = (
         // Refused by its container above: it stays top level, in canvas space.
         if (activeComponents[newComponentId]?.parentId !== newParentId) return;
 
-        const parentLayout = activeNodeLayouts[newParentId];
+        const parentLayout = pastedAbsolute[newParentId];
         if (!parentLayout) return;
 
         const childLayout = activeNodeLayouts[newComponentId];

@@ -214,7 +214,7 @@ export const ALL_TOOLS: LLMTool[] = [
   },
 ];
 
-export const WRITE_TOOL_NAMES: string[] = [
+const WRITE_TOOL_NAMES: string[] = [
   "add_node",
   "remove_node",
   "update_node",

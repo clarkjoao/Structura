@@ -34,7 +34,7 @@ export function encodeValue(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
-export function tombstoneKey(collection: CollectionName, entityId: string): string {
+function tombstoneKey(collection: CollectionName, entityId: string): string {
   return `${collection}/${entityId}`;
 }
 

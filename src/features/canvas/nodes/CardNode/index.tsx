@@ -1,4 +1,4 @@
-import { memo, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { memo, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { useIsCollabGuest } from "@/features/collaboration/hooks/useIsCollabGuest";
 import { CARD_MAX_W, CARD_MIN_W } from "./constants";
+import { holdCardExpanded } from "./expandedCards";
 import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 import { useSelectionDisablesControls } from "../../selection/selectionControls";
 
@@ -44,6 +45,47 @@ function useExpandMaxHeight(
   const collapsedHeight = collapsedHeightRef.current;
   if (!isActive || collapsedHeight === null) return undefined;
   return { maxHeight: Math.max(collapsedHeight * 2, 1) };
+}
+
+/**
+ * Tells the editor's measurement write-back that this card is expanded, so a
+ * passing expansion is never stored as its height (see `expandedCards`).
+ * A layout effect: it is in place before React Flow's ResizeObserver reports
+ * the expanded box, and gone before it reports the resting one.
+ */
+function useHoldExpanded(isActive: boolean, elementId: string): void {
+  useLayoutEffect(
+    () => (isActive ? holdCardExpanded(elementId) : undefined),
+    [isActive, elementId],
+  );
+}
+
+/** What the card draws of its own content: a change here is an edit, not a passing state. */
+function contentKey(d: NodeData): string {
+  return JSON.stringify([
+    d.type,
+    d.name,
+    d.description,
+    d.technology,
+    d.cloudService,
+    d.serviceId,
+    d.linkedDiagramId,
+    d.externalLinks?.length ?? 0,
+  ]);
+}
+
+/**
+ * The laid-out height the card declares, while it still holds what it was laid
+ * out with. Once its content is edited on this mount the floor is released:
+ * the card takes the height of what it now holds, React Flow measures that and
+ * the editor writes it back, and from then on the stored height is that one.
+ * Without the release a card would never shrink after losing a row — its own
+ * measurement is what feeds the floor.
+ */
+function useLaidOutFloor(d: NodeData): number | undefined {
+  const key = contentKey(d);
+  const [laidOutKey] = useState(key);
+  return key === laidOutKey ? d.laidOutMinHeight : undefined;
 }
 
 function useNodeState(d: NodeData, selected: boolean | undefined) {
@@ -133,6 +175,8 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const { d, isActive, incomingCount, outgoingCount } = useNodeState(data, selected);
   const rootRef = useRef<HTMLDivElement>(null);
   const expandStyle = useExpandMaxHeight(isActive, rootRef);
+  useHoldExpanded(isActive, d.elementId);
+  const laidOutFloor = useLaidOutFloor(d);
 
   const customDiagramIcon = useResolvedComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
@@ -215,9 +259,9 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       style={{
         minWidth: CARD_MIN_W,
         maxWidth: CARD_MAX_W,
-        // The box auto-layout anchored the handles against, so the reader draws
-        // the same card the editor did — see `laidOutMinHeight`.
-        ...(d.laidOutMinHeight !== undefined ? { minHeight: d.laidOutMinHeight } : {}),
+        // The box auto-layout anchored the handles against, so the editor and
+        // the reader draw the same card — see `laidOutMinHeight`.
+        ...(laidOutFloor !== undefined ? { minHeight: laidOutFloor } : {}),
         ...borderStyle,
         ...expandStyle,
       }}

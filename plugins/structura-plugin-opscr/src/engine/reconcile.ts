@@ -70,7 +70,7 @@ function cap<T>(record: Record<string, T>, max: number): Record<string, T> {
  * element). A new catalog service picks the provider listing it; a new technology is a provider
  * of the same service, or — for Applications and external systems without one — itself.
  */
-export function providerFromCanvas(
+function providerFromCanvas(
   kind: string,
   component: Pick<PluginComponentSnapshot, "type" | "cloudServiceId" | "technology">,
   serviceChanged: boolean,

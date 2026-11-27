@@ -915,43 +915,6 @@ export class FileSystemAdapter {
     }
   }
 
-  /**
-   * Deletes a directory from the filesystem for a given folder ID.
-   * Only deletes if the directory is empty (safety check).
-   */
-  async deleteDirectory(folderId: string): Promise<boolean> {
-    if (!this.handle) return false;
-
-    try {
-      const dir = await this.handle.getDirectoryHandle(folderId);
-      // Check if directory is empty before deleting
-      let isEmpty = true;
-      for await (const _ of directoryEntries(dir)) {
-        isEmpty = false;
-        break;
-      }
-
-      if (isEmpty) {
-        await this.handle.removeEntry(folderId);
-        return true;
-      } else {
-        console.warn(`[FileSystemAdapter] Directory ${folderId} not empty, skipping delete`);
-        return false;
-      }
-    } catch (e) {
-      // Directory might not exist, which is fine
-      if ((e as Error).name !== "NotFoundError") {
-        console.warn(`[FileSystemAdapter] deleteDirectory failed for ${folderId}:`, e);
-      }
-      return false;
-    }
-  }
-
-  async readDiagram(diagramId: string): Promise<Diagram | null> {
-    if (!this.handle) return null;
-    return this._findDiagramFile(this.handle, diagramId);
-  }
-
   private async _findDiagramFile(
     dir: FileSystemDirectoryHandle,
     diagramId: string,
@@ -975,37 +938,6 @@ export class FileSystemAdapter {
       }
     }
     return null;
-  }
-
-  async deleteDiagram(diagramId: string, diagram?: Diagram): Promise<void> {
-    if (!this.handle) return;
-    try {
-      const segments = diagram ? resolveDiagramPathSegments(diagram, this.folders) : [];
-      const dir = await getOrCreateDirectory(this.handle, segments);
-      await dir.removeEntry(`${diagramId}.json`);
-    } catch {
-      try {
-        const segments = diagram ? resolveDiagramPathSegments(diagram, this.folders) : [];
-        const dir = await getOrCreateDirectory(this.handle, segments);
-        const file = await dir.getFileHandle(`${diagramId}.json`, {
-          create: true,
-        });
-        const writable = await file.createWritable();
-        await writable.write(
-          JSON.stringify(
-            { deleted: true, id: diagramId, deletedAt: new Date().toISOString() },
-            null,
-            2,
-          ),
-        );
-        await writable.close();
-      } catch (error) {
-        console.warn(
-          "[StructuraContext] FileSystemAdapter deleteDiagram tombstone fallback failed",
-          error,
-        );
-      }
-    }
   }
 
   async writeManifest(manifest: WorkspaceManifest): Promise<boolean> {

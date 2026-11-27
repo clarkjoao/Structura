@@ -13,6 +13,7 @@ import {
   isAwsType,
   type AwsCategoryId,
 } from "@/features/cloud/providers/aws/aws.catalog";
+import { inflateRaw } from "./inflate-raw";
 import { allElements } from "@/features/elements/element.registry";
 
 export interface DrawioImportResult {
@@ -44,9 +45,32 @@ const EMPTY_RESULT: DrawioImportResult = {
 
 const MXGRAPH_MODEL_RE = /<mxGraphModel\b[\s\S]*?<\/mxGraphModel>/;
 
+const COMPRESSED_DIAGRAM_RE = /<diagram\b[^>]*>\s*([A-Za-z0-9+/=\s]+?)\s*<\/diagram>/;
+
+/**
+ * draw.io desktop compresses `<diagram>` by default: base64 of raw-deflate of the
+ * URI-encoded mxGraphModel. Returns the decoded model, or null when there is none to decode.
+ */
+function decompressDiagram(xml: string): string | null {
+  const payload = xml.match(COMPRESSED_DIAGRAM_RE)?.[1];
+  if (!payload) return null;
+  try {
+    const binary = atob(payload.replace(/\s+/g, ""));
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    // The inflated bytes are the ASCII of encodeURIComponent(xml).
+    const inflated = new TextDecoder("latin1").decode(inflateRaw(bytes));
+    return decodeURIComponent(inflated);
+  } catch {
+    return null;
+  }
+}
+
 function extractMxGraphModelFragment(xml: string): string {
   const match = xml.match(MXGRAPH_MODEL_RE);
-  return match ? match[0] : xml;
+  if (match) return match[0];
+  const decompressed = decompressDiagram(xml);
+  if (decompressed) return extractMxGraphModelFragment(decompressed);
+  return xml;
 }
 
 function isParseErrorDocument(doc: Document): boolean {
@@ -76,7 +100,7 @@ function readGeometry(element: Element): { x: number; y: number; width: number; 
 }
 
 function extractStyle(el: Element): string {
-  const cell = el.tagName.toLowerCase() === "object" ? el.querySelector("mxCell") : el;
+  const cell = isObjectWrapper(el) ? el.querySelector("mxCell") : el;
   return cell?.getAttribute("style") ?? "";
 }
 
@@ -102,7 +126,7 @@ type ConversionResult =
   | { kind: "unknown"; name: string; rawContent: string };
 
 function plainTextLabelFromElement(el: Element): string {
-  if (el.tagName.toLowerCase() === "object") {
+  if (isObjectWrapper(el)) {
     const fromLabel = stripHtmlTags(getAttr(el, "label"));
     const fromValue = stripHtmlTags(getAttr(el, "value"));
     const c4Name = getAttr(el, "c4Name").trim();
@@ -157,10 +181,9 @@ function tryConvertUnknownCell(el: Element): ConversionResult {
     };
   }
 
-  const rawForUnknown =
-    el.tagName.toLowerCase() === "object"
-      ? unknownRawContent(el)
-      : getAttr(el, "label") || getAttr(el, "value") || style;
+  const rawForUnknown = isObjectWrapper(el)
+    ? unknownRawContent(el)
+    : getAttr(el, "label") || getAttr(el, "value") || style;
 
   return {
     kind: "unknown",
@@ -174,7 +197,7 @@ function stripHtmlTags(value: string): string {
 }
 
 function unknownRawContent(element: Element): string {
-  if (element.tagName.toLowerCase() === "object") {
+  if (isObjectWrapper(element)) {
     const label = getAttr(element, "label");
     const vertexCell = getVertexMxCellFromObject(element);
     const value = vertexCell ? getAttr(vertexCell, "value") : "";
@@ -238,10 +261,40 @@ function isVertexMxCell(mxCell: Element): boolean {
   return getAttr(mxCell, "vertex") === "1";
 }
 
+/** draw.io's `<object>` and `<UserObject>`: a cell wrapper that carries id, label and custom data. */
+function isObjectWrapper(element: Element): boolean {
+  const tag = element.tagName.toLowerCase();
+  return tag === "object" || tag === "userobject";
+}
+
+function objectWrappers(document: Document): Element[] {
+  return [
+    ...Array.from(document.getElementsByTagName("object")),
+    ...Array.from(document.getElementsByTagName("UserObject")),
+  ];
+}
+
+/**
+ * In the standard draw.io format a cell with custom properties is written as
+ * `<object id label ...props><mxCell style parent vertex/></object>`: the id and label live on the
+ * wrapper. Copy them onto the inner mxCell (when it has none) so every wrapped cell, vertex or
+ * edge, reads like a bare one.
+ */
+function hoistWrapperAttributes(document: Document): void {
+  for (const wrapper of objectWrappers(document)) {
+    const cell = Array.from(wrapper.children).find((child) => child.tagName === "mxCell");
+    if (!cell) continue;
+    const id = wrapper.getAttribute("id");
+    if (id && !cell.hasAttribute("id")) cell.setAttribute("id", id);
+    const label = wrapper.getAttribute("label") ?? wrapper.getAttribute("value");
+    if (label !== null && !cell.hasAttribute("value")) cell.setAttribute("value", label);
+  }
+}
+
 function closestObjectAncestor(element: Element | null): Element | null {
   let current: Element | null = element;
   while (current) {
-    if (current.tagName.toLowerCase() === "object") {
+    if (isObjectWrapper(current)) {
       return current;
     }
     current = current.parentElement;
@@ -316,9 +369,7 @@ function pendingVertex(
 /** The `<object>` wrappers: C4 elements, scope boundaries and shared-element references. */
 function collectObjectVertices(document: Document, ctx: CollectContext): void {
   const { pendingVertices, skipped, innerMxCellsFromObjects } = ctx;
-  const objectNodes = document.getElementsByTagName("object");
-  for (let index = 0; index < objectNodes.length; index += 1) {
-    const objectEl = objectNodes[index]!;
+  for (const objectEl of objectWrappers(document)) {
     const c4TypeLabel = getAttr(objectEl, "c4Type");
     // A reference to a shared element, as Structura exported it.
     const refOf = getAttr(objectEl, "structuraRefOf");
@@ -684,6 +735,7 @@ export function parseDrawioXml(
     skipped: [],
     innerMxCellsFromObjects: new Set<Element>(),
   };
+  hoistWrapperAttributes(document);
   const mxCellNodes = document.getElementsByTagName("mxCell");
   collectObjectVertices(document, collect);
   collectMxCellVertices(mxCellNodes, collect);

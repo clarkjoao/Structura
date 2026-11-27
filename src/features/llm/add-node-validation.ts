@@ -1,19 +1,7 @@
-import { cloudRegistry } from "@/features/cloud";
 import { hasElement } from "@/features/elements/element.registry";
 import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
 
 export type AddNodeValidation = { ok: true } | { ok: false; reason: string };
-
-/**
- * True when `nodeType` is a cloud/tech category that carries service variants.
- *
- * @example
- * isCloudCatalogType("oss-datastore") // true
- * isCloudCatalogType("system") // false
- */
-export function isCloudCatalogType(nodeType: string): boolean {
-  return cloudRegistry.isCloudType(nodeType);
-}
 
 /**
  * Registry check: type must exist; when a service id is given (or the type is

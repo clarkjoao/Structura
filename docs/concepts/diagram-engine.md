@@ -53,7 +53,7 @@ Three reasons, in priority order:
 
 - `flow-repair.ts` / `flow-migration.ts` — flows self-heal when components
   they reference are deleted; migrations upgrade old flow shapes.
-- `scene-mutations.ts` / `scene.utils.ts` — applying `VersionDiff`s to a
+- `version-mutations.ts` / `version.utils.ts` — applying `VersionDiff`s to a
   snapshot, resolving effective components under an active scene.
 - `children-index.ts` — parent→children index used by panels and layout.
 - `import-mermaid-flowchart.ts` / `import-mermaid-sequence.ts` — text-to-model

@@ -104,7 +104,7 @@ interface BaseComponent {
 /** How a shared element's incoming edges are drawn: as they are, as badges, via references, or a bus. */
 export type SharedMode = "edges" | "badge" | "ref" | "bus";
 
-export interface SharedSpec {
+interface SharedSpec {
   mode: SharedMode;
 }
 
@@ -584,36 +584,3 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ShardedStoreComponent, "id">> &
   Partial<Omit<FlowDividerComponent, "id">> &
   Partial<Omit<TextComponent, "id">> & { width?: number; height?: number };
-
-export type TypedComponentPatch =
-  | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<PanelComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<NoteComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<AwsComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<GcpComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<AzureComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<OssComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ApiGroupComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<UnknownComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<DbTableComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<SharedRefComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sContainerComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sIngressComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sServiceComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sWorkloadComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sNamespaceComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<K8sClusterComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ShardRouterComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ShardComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<ShardedStoreComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<TextComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
-  | { width?: number; height?: number };

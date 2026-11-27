@@ -11,6 +11,7 @@ import {
   edgeStyleToDropdown,
 } from "@/features/canvas/selection-actions/edgeStyleMapping";
 import { FloatingSelectionToolbar } from "@/features/canvas/selection-actions/FloatingSelectionToolbar";
+import { saveLastEdgeStyle } from "@/features/diagram/utils/edge-style";
 import { RouteThroughRefButton } from "@/features/canvas/shared/RouteThroughRefButton";
 
 interface EdgeToolbarProps {
@@ -69,7 +70,10 @@ export function EdgeToolbar({
             <EdgeStyleDropdown
               currentStyle={edgeStyleToDropdown(edgeStyle)}
               onChangeStyle={(displayValue) => {
-                onStyleChange!(dropdownToEdgeStyle(displayValue));
+                const style = dropdownToEdgeStyle(displayValue);
+                // Remember the pick so the next edge created starts in the same style.
+                saveLastEdgeStyle(style);
+                onStyleChange!(style);
               }}
             />
             <ColorPicker selectedColor={edgeColor} onSelectColor={onColorChange!} />

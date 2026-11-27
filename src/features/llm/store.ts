@@ -44,13 +44,6 @@ import {
   resolveRef,
   runCatalogReadActions,
 } from "./apply-diagram-patch";
-import {
-  applyIRToDiagram,
-  buildIRSystemPrompt,
-  parseAndValidateIR,
-  type DiagramIR,
-  type IRValidationIssue,
-} from "./ir";
 import { sendMessage as sendOpenAIMessage } from "./providers/openai";
 import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
 import { sendMessage as sendProxyMessage } from "./providers/proxy";
@@ -79,48 +72,6 @@ function buildPatchMessage(locale: string, actionCount: number): string {
   return isPT
     ? `Proponho ${actionCount} alterações no diagrama.`
     : `I propose ${actionCount} diagram changes.`;
-}
-
-/**
- * Renders validation issues as a message the user can act on. Codes map 1:1 to
- * i18n keys so the validator itself carries no user-visible text.
- */
-function buildIRIssuesMessage(
-  issues: IRValidationIssue[],
-  headerKey = "llmChat.ir.invalid",
-): string {
-  const MAX_LISTED_ISSUES = 8;
-  const lines = issues
-    .slice(0, MAX_LISTED_ISSUES)
-    .map((issue) => `- ${i18n.t(`llmChat.ir.issue.${issue.code}`, { ...issue.params })}`);
-  if (issues.length > MAX_LISTED_ISSUES) {
-    lines.push(
-      `- ${i18n.t("llmChat.ir.moreIssues", { count: issues.length - MAX_LISTED_ISSUES })}`,
-    );
-  }
-  return [i18n.t(headerKey), ...lines].join("\n");
-}
-
-/**
- * The response was cut at the provider's output ceiling. This is deliberately
- * not the generic "outside the IR schema" message: the diagram the model was
- * describing may be perfectly well-formed, it just did not fit, and the user's
- * next move is to ask for less rather than to look for a modelling mistake.
- */
-function buildTruncatedMessage(): string {
-  return buildIRIssuesMessage([{ code: "responseTruncated" }], "llmChat.ir.truncated");
-}
-
-/**
- * The IR is the input every later slice debugs against, so it is logged raw
- * alongside the validation outcome and also kept on the store as
- * `lastGeneratedIR` for inspection.
- */
-function logGeneratedIR(rawResponse: string, ir: DiagramIR | null): void {
-  console.info("[ir] raw model response:", rawResponse);
-  if (ir) {
-    console.info("[ir] validated IR:", JSON.stringify(ir, null, 2));
-  }
 }
 
 function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
@@ -213,7 +164,6 @@ export interface LLMStoreState {
   isLoading: boolean;
   error: LLMErrorKind | null;
   /** Last IR the generator produced and the validator accepted, kept for inspection. */
-  lastGeneratedIR: DiagramIR | null;
 
   setLLMConfig: (config: LLMConfig) => void;
   setActiveConnection: (id: string) => void;
@@ -240,7 +190,6 @@ export interface LLMStoreState {
    * Generates a whole diagram from a natural-language description, through the
    * IR pipeline: prompt -> IR -> validation -> ELK layout -> canvas.
    */
-  generateDiagramFromIR: (description: string, userText: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
   /**
    * A request waiting for the chat panel to send it with the diagram's context (a kind's
@@ -364,7 +313,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     streamingContent: null,
     isLoading: false,
     error: null,
-    lastGeneratedIR: null,
     queuedPrompt: null,
     queuePrompt: (text) => set({ queuedPrompt: text }),
 
@@ -966,153 +914,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           error: null,
         });
         persistThread();
-      } catch (error) {
-        const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
-        set({
-          messages: outgoingMessages,
-          streamingContent: null,
-          isLoading: false,
-          error: errorKind,
-        });
-        persistThread();
-      }
-    },
-
-    generateDiagramFromIR: async (description, userText) => {
-      const state = get();
-
-      if (!isChatThreadsHydrated()) {
-        void hydrateChatThreadsCacheFromIdb();
-      }
-
-      const userMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: userText.trim(),
-        timestamp: Date.now(),
-      };
-      const outgoingMessages = [...state.messages, userMessage];
-
-      const trimmedDescription = description.trim();
-      if (!trimmedDescription) {
-        set({
-          messages: [
-            ...outgoingMessages,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant",
-              content: i18n.t("llmChat.ir.commandHint"),
-              timestamp: Date.now(),
-            },
-          ],
-          streamingContent: null,
-          isLoading: false,
-          error: null,
-        });
-        persistThread();
-        return;
-      }
-
-      const assistantMessageId = crypto.randomUUID();
-      set({
-        messages: [
-          ...outgoingMessages,
-          { id: assistantMessageId, role: "assistant", content: "", timestamp: Date.now() },
-        ],
-        streamingContent: "",
-        isLoading: true,
-        error: null,
-      });
-
-      const finishWith = (content: string) => {
-        set({
-          messages: get().messages.map((message) =>
-            message.id === assistantMessageId ? { ...message, content } : message,
-          ),
-          streamingContent: null,
-          isLoading: false,
-        });
-        persistThread();
-      };
-
-      try {
-        const systemPrompt = buildIRSystemPrompt(getResolvedAppLanguage());
-        let streamed = "";
-        const { text: rawResponse, stopReason } = await executeLLMMessage(
-          state.config,
-          [{ ...userMessage, content: trimmedDescription }],
-          systemPrompt,
-          (chunk) => {
-            // A partial IR is not renderable, so only the progress indicator
-            // reacts to streaming — the message body stays empty until the end.
-            streamed += chunk;
-            set({ streamingContent: streamed });
-          },
-        );
-
-        // Checked before parsing: a response the provider cut at its output
-        // ceiling is incomplete whatever it looks like, and running it through
-        // the validator would only produce `invalidJson`, which points the user
-        // at the wrong problem.
-        if (stopReason === "length") {
-          logGeneratedIR(rawResponse, null);
-          set({ lastGeneratedIR: null });
-          finishWith(buildTruncatedMessage());
-          return;
-        }
-
-        const validation = parseAndValidateIR(rawResponse);
-        if (!validation.ok) {
-          logGeneratedIR(rawResponse, null);
-          set({ lastGeneratedIR: null });
-          finishWith(buildIRIssuesMessage(validation.issues));
-          return;
-        }
-
-        logGeneratedIR(rawResponse, validation.ir);
-        set({ lastGeneratedIR: validation.ir });
-
-        if (!useDiagramStore.getState().activeDiagramId) {
-          finishWith(i18n.t("llmChat.ir.noActiveDiagram"));
-          return;
-        }
-
-        const applied = await applyIRToDiagram(validation.ir);
-        if (applied.componentIds.length === 0) {
-          finishWith(i18n.t("llmChat.ir.notApplied"));
-          return;
-        }
-
-        const appliedMessage = i18n.t("llmChat.ir.applied", {
-          nodeCount: applied.componentIds.length,
-          edgeCount: applied.connectionIds.length,
-        });
-
-        // Generated nodes/edges are already on the canvas (insertGeneratedGraph
-        // applied them as a single undo step) — stage them as a pending
-        // suggestion so the user gets the same Accept/Reject + canvas
-        // Keep/Discard flow as a normal chat patch, instead of the result
-        // being final immediately.
-        const suggestion: PendingSuggestion = {
-          id: crypto.randomUUID(),
-          messageId: assistantMessageId,
-          patch: { id: crypto.randomUUID(), description: appliedMessage, actions: [] },
-          status: "pending",
-        };
-        set({
-          pendingSuggestions: [...get().pendingSuggestions, suggestion],
-          pendingPreviews: [
-            ...get().pendingPreviews,
-            {
-              suggestionId: suggestion.id,
-              // References the auto-layout made go with the nodes they stand for.
-              nodeIds: [...applied.componentIds, ...applied.referenceIds],
-              edgeIds: applied.connectionIds,
-            },
-          ],
-        });
-
-        finishWith(appliedMessage);
       } catch (error) {
         const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
         set({

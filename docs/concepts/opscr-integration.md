@@ -23,8 +23,8 @@ Structura edits the YAML only as text patches. Positions live in a sidecar file,
 | --- | --- |
 | `~/www/opscr` | The opscr engine. `schemas/opscr.dev/v1/*.schema.yaml` (source of truth for Kinds), `src/kernel` (= `opscr/core`, browser-safe), CLI `opscr compile <dir>`, `opscr import drawio`, `opscr mcp`, the `opscr-architect` skill. Examples: `examples/sample`, `examples/web-app-aws`. Linked into Structura with `npm link opscr`, not from npm. |
 | `src/lib/opscr-mapping` | Pure projection YAML → Structura graph (technical view, view diagrams, layout file, visual layer, `withoutBroken`). No `@/` imports and no `opscr` import. Copied into the plugin and the extension by `sync-shared`. |
-| `src/lib/opscr-layout` | Shared ELK layout runner. Also copied. |
-| `plugins/structura-plugin-opscr` | The Structura plugin: importer, the **opscr document pane**, the bidirectional engine, the chat context. It bundles `opscr/core` and ELK. |
+| `src/lib/opscr-layout` | ELK layout runner for the VSCode extension only (its manual arrange mode, in the Node extension host), copied there by `sync-shared`. The plugin does not use it: it lays out with the host's engine through `api.layout` (API 1.19). |
+| `plugins/structura-plugin-opscr` | The Structura plugin: importer, the **opscr document pane**, the bidirectional engine, the chat context. It bundles `opscr/core`; layout is the host's engine (`api.layout.arrange`). |
 | `extensions/vscode-opscr` | The VSCode preview: a read-only picture beside the YAML, plus problems in the Problems panel. It loads `dist-embed` (`npm run build:embed`). |
 
 ## opscr in 30 seconds
@@ -99,7 +99,7 @@ node dist/cli/index.js compile examples/web-app-aws
 
 # plugin (plugins/structura-plugin-opscr)
 npm link opscr                       # again after every npm install
-npm run sync-shared                  # after touching src/lib/opscr-mapping or opscr-layout
+npm run sync-shared                  # after touching src/lib/opscr-mapping
 npm run typecheck && npm test
 # then at the root: build the app with the plugin, run the e2e
 npm run build:plugins -- --no-build structura-plugin-opscr

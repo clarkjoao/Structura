@@ -15,7 +15,7 @@ import { useCollabStore } from "../store/collab.store";
 const RENEW_MS = Math.floor(LIMITS.lockTtlMs / 3);
 
 /** Name of the peer holding a lock on `elementId`, or null. */
-export function useLockedBy(elementId: string | null): string | null {
+function useLockedBy(elementId: string | null): string | null {
   return useCollabStore((state) => {
     if (!elementId) return null;
     const lock = state.locks[elementId];

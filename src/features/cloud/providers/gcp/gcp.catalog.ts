@@ -31,10 +31,6 @@ for (const cat of GCP_CATEGORIES) {
   _categoryMap.set(cat.id, cat);
 }
 
-export const GCP_CATEGORY_MAP = _categoryMap;
-
-export const GCP_CATEGORY_ID_GENERAL = "gcp-general" as const satisfies GcpCategoryId;
-
 export function isGcpType(type: string): type is GcpCategoryId {
   return type.startsWith("gcp-");
 }

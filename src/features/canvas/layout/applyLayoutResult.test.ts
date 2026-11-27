@@ -1,8 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { applyLayoutResultEdges } from "./applyLayoutResult";
 import { layout } from "./layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
-import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { REFERENCE_DIAGRAMS, fixtureGraph } from "./reference-diagrams";
 import { useDiagramStore } from "@/features/diagram";
 import { applyLayoutEdgesAsCalls } from "@/test/layoutEdgeCalls";
 
@@ -305,8 +304,8 @@ describe("applyLayoutResultEdges — integration with layout()", () => {
   });
 
   it("writes handle order for every node in a real layout result", async () => {
-    const { ir } = REFERENCE_DIAGRAMS[0];
-    const graph = irToLayoutGraph(ir);
+    const { diagram } = REFERENCE_DIAGRAMS[0];
+    const graph = fixtureGraph(diagram);
     const result = await layout(graph);
 
     applyLayoutResultEdges(graph, result, diagramId);
@@ -316,8 +315,8 @@ describe("applyLayoutResultEdges — integration with layout()", () => {
   });
 
   it("writes waypoints for edges that have bend points in a real layout", async () => {
-    const { ir } = REFERENCE_DIAGRAMS[0];
-    const graph = irToLayoutGraph(ir);
+    const { diagram } = REFERENCE_DIAGRAMS[0];
+    const graph = fixtureGraph(diagram);
     const result = await layout(graph);
 
     applyLayoutResultEdges(graph, result, diagramId);
@@ -326,8 +325,8 @@ describe("applyLayoutResultEdges — integration with layout()", () => {
   });
 
   it("the offset shift is applied to real waypoints without affecting handle order", async () => {
-    const { ir } = REFERENCE_DIAGRAMS[0];
-    const graph = irToLayoutGraph(ir);
+    const { diagram } = REFERENCE_DIAGRAMS[0];
+    const graph = fixtureGraph(diagram);
     const result = await layout(graph);
 
     const OFFSET = { x: 1000, y: 500 };

@@ -1,6 +1,5 @@
 import { PanelKind } from "../enums";
 import type { ComponentType } from "./component.types";
-import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import i18n from "@/infrastructure/i18n";
 
 export const C4_TYPES = ["person", "system", "container", "component"] as const;
@@ -173,28 +172,6 @@ export function isPluginComponentType(type: string): type is `${string}/${string
   return PLUGIN_COMPONENT_TYPE_PATTERN.test(type);
 }
 
-/**
- * Strict runtime check: returns true only when `type` is namespaced
- * (`<pluginId>/<name>`) AND the pluginId is in the supplied set of
- * installed plugin ids.
- *
- * The caller is responsible for reading the registry (via
- * `getInstalledPluginIds()` from `@/features/plugins/plugin-registry`)
- * — keeping this helper free of a hard import avoids the circular
- * dependency between `@/features/diagram` and `@/features/plugins`.
- */
-export function isRegisteredPluginComponentType(
-  type: string,
-  installedPluginIds: ReadonlySet<string>,
-): boolean {
-  if (!isPluginComponentType(type)) return false;
-  const slashIdx = type.indexOf("/");
-  if (slashIdx <= 0) return false;
-  const pluginId = type.slice(0, slashIdx);
-  if (!pluginId) return false;
-  return installedPluginIds.has(pluginId);
-}
-
 export function isDbTableType(type: string): type is "db-table" {
   return type === COMPONENT_TYPE_DB_TABLE;
 }
@@ -209,28 +186,6 @@ export function isExternalElementType(type: string): type is "external-element" 
 
 export function isPanelKind(value: string): value is PanelKind {
   return Object.values(PanelKind).includes(value as PanelKind);
-}
-
-export function getUsageKeyForType(type: ComponentType, panelKind?: PanelKind): string {
-  if (isPanelType(type) || isNoteType(type)) {
-    return `canvas:${type}${panelKind ? `:${panelKind}` : ""}`;
-  }
-  if (
-    isEndpointType(type) ||
-    isApiGroupType(type) ||
-    isDbTableType(type) ||
-    isJsonViewerType(type) ||
-    isProcessNodeType(type)
-  ) {
-    return `canvas:${type}`;
-  }
-  if (isC4Type(type)) {
-    return `c4:${type}`;
-  }
-  if (isAwsType(type)) {
-    return `aws:${type}`;
-  }
-  return `canvas:${type}`;
 }
 
 export function getDefaultNameForNewComponent(

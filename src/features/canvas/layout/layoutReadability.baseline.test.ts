@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateIR } from "@/features/llm/ir/ir-validator";
 import { layoutElkGraph } from "./layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import {
   measurePolylines,
   measureReadability,
@@ -11,7 +9,13 @@ import {
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
 import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import {
+  labelsOf,
+  REFERENCE_DIAGRAMS,
+  edgesOf,
+  fixtureGraph,
+  fixtureIssues,
+} from "./reference-diagrams";
 import { GENERATED_DIAGRAMS } from "./generated-diagrams";
 import { stepPolyline } from "./renderedEdgePath";
 import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
@@ -26,6 +30,7 @@ import { layout } from "./layoutEngine";
  * re-measure after changing layout options.
  */
 
+// All numbers in this file are measured on `fromDiagram` input since DC-070.
 const BASELINE: Record<string, Pick<ReadabilityReport, "edgeCrossings" | "edgeNodeOverlaps">> = {
   "C4 e-commerce": { edgeCrossings: 0, edgeNodeOverlaps: 0 },
   "AWS ECS Fargate": { edgeCrossings: 3, edgeNodeOverlaps: 0 },
@@ -34,10 +39,9 @@ const BASELINE: Record<string, Pick<ReadabilityReport, "edgeCrossings" | "edgeNo
 };
 
 describe("reference diagrams", () => {
-  it("are all schema-valid IR", () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const result = validateIR(ir);
-      const issues = result.ok ? [] : result.issues;
+  it("are all structurally sound", () => {
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const issues = fixtureIssues(diagram);
       expect(issues, `${name}: ${JSON.stringify(issues)}`).toHaveLength(0);
     }
   });
@@ -48,9 +52,9 @@ describe("layout readability baseline", () => {
     const rows: string[] = [];
     const failures: string[] = [];
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutElkGraph(irToLayoutGraph(ir));
-      const report = measureReadability(graph, { labels: labelsOf(ir) });
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(fixtureGraph(diagram));
+      const report = measureReadability(graph, { labels: labelsOf(diagram) });
 
       rows.push(
         [
@@ -92,10 +96,12 @@ describe("layout readability baseline", () => {
   it("prints the rendered-path table", async () => {
     const rows: string[] = [];
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutElkGraph(irToLayoutGraph(ir));
-      const rendered = measureRenderedReadability(graph, ir.edges, { labels: labelsOf(ir) });
-      const elk = measureReadability(graph, { labels: labelsOf(ir) });
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(fixtureGraph(diagram));
+      const rendered = measureRenderedReadability(graph, edgesOf(diagram), {
+        labels: labelsOf(diagram),
+      });
+      const elk = measureReadability(graph, { labels: labelsOf(diagram) });
 
       rows.push(
         [
@@ -125,7 +131,7 @@ describe("layout readability baseline", () => {
    *   round-robin handles  10 + 12 + 12 + 14 = 48
    *   ELK ordering          2 +  3 +  5 +  7 = 17
    *
-   * Both totals are reproducible — the IR ids are fixed, so this path is
+   * Both totals are reproducible — the fixture ids are fixed, so this path is
    * deterministic across runs. An earlier note here recorded the shipped total
    * as 16 with a decomposition of 1 + 3 + 5 + 7; neither reproduces, and the
    * "16 -> 15" improvement it implied was never the comparison. The comparison
@@ -134,7 +140,7 @@ describe("layout readability baseline", () => {
    *
    * An upper bound, like the ELK-routing numbers above.
    *
-   * Re-measured 2026-10-21 when `irToLayoutGraph` started sending edge labels
+   * Re-measured 2026-10-21 when `fixtureGraph` started sending edge labels
    * to ELK: 1 + 8 + 6 + 10 = 25. This path is the mid-X step a connection with
    * no stored corners draws; since generation and the auto-layout both store
    * ELK's corridors, what reaches the user is the "auto-layout path" baseline
@@ -156,10 +162,10 @@ describe("layout readability baseline", () => {
     const rows: string[] = [];
     const failures: string[] = [];
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutElkGraph(irToLayoutGraph(ir));
-      const report = measureRenderedReadability(graph, ir.edges, {
-        labels: labelsOf(ir),
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(fixtureGraph(diagram));
+      const report = measureRenderedReadability(graph, edgesOf(diagram), {
+        labels: labelsOf(diagram),
         handleOrder: readElkHandleOrder(graph),
       });
       reports.push(report);
@@ -187,11 +193,13 @@ describe("layout readability baseline", () => {
   it("is a large improvement over round-robin handles, on every diagram", async () => {
     const rows: string[] = [];
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutElkGraph(irToLayoutGraph(ir));
-      const labels = labelsOf(ir);
-      const roundRobin = measureRenderedReadability(graph, ir.edges, { labels }).edgeCrossings;
-      const ordered = measureRenderedReadability(graph, ir.edges, {
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(fixtureGraph(diagram));
+      const labels = labelsOf(diagram);
+      const roundRobin = measureRenderedReadability(graph, edgesOf(diagram), {
+        labels,
+      }).edgeCrossings;
+      const ordered = measureRenderedReadability(graph, edgesOf(diagram), {
         labels,
         handleOrder: readElkHandleOrder(graph),
       }).edgeCrossings;
@@ -206,11 +214,11 @@ describe("layout readability baseline", () => {
   });
 
   it("produces a layout for every reference diagram", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutElkGraph(irToLayoutGraph(ir));
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(fixtureGraph(diagram));
       const report = measureReadability(graph);
-      expect(report.nodeCount, name).toBe(ir.nodes.length);
-      expect(report.edgeCount, name).toBe(ir.edges.length);
+      expect(report.nodeCount, name).toBe(Object.keys(diagram.snapshot.components).length);
+      expect(report.edgeCount, name).toBe(edgesOf(diagram).length);
     }
   });
 });
@@ -247,23 +255,24 @@ describe("auto-layout path baseline", () => {
     "AWS microservices": { crossings: 4, labelOverlaps: 0 },
   };
 
-  const CORNERS_BASELINE = 170;
+  // Measured on `fromDiagram` input since DC-070 (was 170 on the retired generation format).
+  const CORNERS_BASELINE = 172;
 
   it("stays within the recorded crossings, label overlaps and corners", async () => {
     const failures: string[] = [];
     const rows: string[] = [];
     let corners = 0;
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const labels = labelsOf(ir);
-      const input = irToLayoutGraph(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const labels = labelsOf(diagram);
+      const input = fixtureGraph(diagram);
       const graph = await layoutElkGraph(input);
       const result = await layout(input);
       const cornersByEdgeId = new Map(
         [...handleAlignedRoutes(input, result)].map(([id, route]) => [id, route.corners]),
       );
       for (const routeCorners of cornersByEdgeId.values()) corners += routeCorners.length;
-      const report = measureRenderedReadability(graph, ir.edges, {
+      const report = measureRenderedReadability(graph, edgesOf(diagram), {
         labels,
         handleOrder: result.handleOrder,
         cornersByEdgeId,
@@ -306,7 +315,8 @@ describe("auto-layout path baseline", () => {
  */
 describe("auto-layout path — vertical channels stay apart", () => {
   const TOO_CLOSE = 10;
-  const NEAR_PARALLEL_BASELINE = 2;
+  // Measured on `fromDiagram` input since DC-070 (was 2 on the retired generation format).
+  const NEAR_PARALLEL_BASELINE = 6;
 
   interface Vertical {
     edge: string;
@@ -342,8 +352,8 @@ describe("auto-layout path — vertical channels stay apart", () => {
 
   it("keeps different edges' vertical legs at least a channel apart", async () => {
     let pairs = 0;
-    for (const { ir } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
-      const input = irToLayoutGraph(ir);
+    for (const { diagram } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
+      const input = fixtureGraph(diagram);
       const routes = handleAlignedRoutes(input, await layout(input));
       pairs += nearParallelPairs(
         [...routes].flatMap(([id, route]) =>

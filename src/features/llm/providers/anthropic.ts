@@ -19,7 +19,7 @@ const ANTHROPIC_MAX_OUTPUT_TOKENS = 16000;
  * `max_tokens` is the cut-off case; anything unrecognised stays `unknown`
  * rather than being read as a clean stop.
  */
-export function toStopReason(stopReason: unknown): LLMStopReason {
+function toStopReason(stopReason: unknown): LLMStopReason {
   if (stopReason === "max_tokens") {
     return "length";
   }

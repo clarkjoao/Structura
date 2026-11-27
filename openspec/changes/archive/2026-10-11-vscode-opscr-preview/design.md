@@ -2,7 +2,7 @@
 
 ## Context
 
-- Spike findings: `docs/investigation/vscode-preview-spike.md`. The viewer renders from a
+- Spike findings: `docs/investigation/archive/vscode-preview-spike.md`. The viewer renders from a
   router-less entry (with a `MemoryRouter`, since card badges call `useNavigate`) and an in-memory
   store fed by `insertGeneratedGraph`. Seeded ELK in interactive mode keeps the order of panels but
   still moves existing nodes ~160 px on average after adding one element — not stable enough alone.

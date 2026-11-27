@@ -31,8 +31,7 @@ npm run typecheck    # the type gate: checks src and vite.config.ts
 npm run lint         # eslint
 npm run format       # prettier --write
 npm run test         # vitest run
-npm run fallow:check # CI gate: no import cycles, no new dead code vs fallow-dead-code-baseline.json
-npm run fallow:baseline # re-save the baseline after deliberately removing dead code
+npm run cycles:check # CI gate: no import cycles
 npm run build        # npm run typecheck && vite build
 npm run build:embed  # dist-embed/: embed.html (graph preview) and embed-editor.html
 ```
@@ -67,9 +66,10 @@ src/
 ├── embed/                  # embed.html / embed-editor.html entries and their postMessage protocols
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
-├── lib/                    # export-service (drawio/mermaid/structurizr), catalogs, utils;
-│                           # opscr-mapping / opscr-layout are copied into plugins and the
-│                           # VSCode extension by their `sync-shared` scripts
+├── lib/                    # export-service (drawio/mermaid/json), catalogs, utils;
+│                           # opscr-mapping is copied into the opscr plugin and the VSCode
+│                           # extension, opscr-layout into the extension only, by their
+│                           # `sync-shared` scripts (plugins lay out through `api.layout`)
 └── fixtures/seeds/         # demo workspace content (Portuguese demo data is intentional)
 ```
 
@@ -168,5 +168,6 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
   chat) imports leaf modules directly instead of the barrels.
 - The LLM feature is its own lazy chunk. Never snapshot `allElements()` at module
   scope inside it — the registry is empty there at chunk load, which shipped a
-  production bug that every unit test passed. Read the static catalog instead
-  (`llm/ir/ir.types.ts`), or call the registry at use time.
+  production bug that every unit test passed. Call the registry at use time
+  (inside the function, never in a top-level initialiser); `registry-snapshot.guard.test.ts`
+  locks it.

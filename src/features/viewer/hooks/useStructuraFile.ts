@@ -36,7 +36,7 @@ interface ObserverWindow {
   };
 }
 
-export function isFilePickerSupported(): boolean {
+function isFilePickerSupported(): boolean {
   return typeof window !== "undefined" && "showOpenFilePicker" in window;
 }
 
@@ -53,7 +53,7 @@ export type FileSourceState =
  * bare `Diagram`, and a persisted workspace payload, from which the diagram
  * named by `activeDiagramId` is taken (or the only one, when there is one).
  */
-export function diagramFromFileText(text: string): Diagram {
+function diagramFromFileText(text: string): Diagram {
   const parsed: unknown = JSON.parse(text);
   if (!parsed || typeof parsed !== "object") throw new Error("not-a-diagram");
 

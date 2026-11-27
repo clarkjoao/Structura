@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { LayoutBox, LayoutGraph, LayoutResult } from "./contract";
 import { placeIncrementally } from "./incrementalPlacement";
 import { layout, layoutElkGraph } from "./layoutEngine";
 import { measureReadability } from "./layoutReadability";
-import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { REFERENCE_DIAGRAMS, fixtureGraph } from "./reference-diagrams";
 
 /**
  * Automatic-mode stability experiment. Measurement only.
@@ -131,8 +130,8 @@ describe("automatic-mode stability", () => {
     };
     let cases = 0;
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = irToLayoutGraph(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = fixtureGraph(diagram);
       const base = await layout(graph);
       const baseAbs = absolute(graph, base);
       const parents = new Set(graph.nodes.map((n) => n.parentId).filter(Boolean));

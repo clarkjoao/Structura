@@ -15,7 +15,7 @@ import {
   type OmittedManifest,
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
-import { layoutView } from "./generated/opscr-layout";
+import { layoutView } from "./layout";
 import type { Projector, ViewInfo } from "./engine/engine";
 
 export interface Projection {

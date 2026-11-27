@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { layout } from "./layoutEngine";
 import { chooseAutoRefs, planAutoRefs, type AutoRefPlanOptions } from "./autoRefs";
 import { GENERATED_DIAGRAMS } from "./generated-diagrams";
-import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { REFERENCE_DIAGRAMS, fixtureGraph } from "./reference-diagrams";
 import type { LayoutGraph } from "./contract";
 
 /**
@@ -30,8 +29,8 @@ function optionsFor(graph: LayoutGraph): AutoRefPlanOptions {
 describe("auto references, measured", () => {
   it("prints before/after for every fixture and never reads worse", async () => {
     const rows: string[] = [];
-    for (const { name, ir } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
-      const graph = irToLayoutGraph(ir);
+    for (const { name, diagram } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
+      const graph = fixtureGraph(diagram);
       const options = optionsFor(graph);
       const hubs = planAutoRefs(graph, options);
       const choice = await chooseAutoRefs(graph, options, layout);

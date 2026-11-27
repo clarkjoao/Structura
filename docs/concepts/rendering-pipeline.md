@@ -23,7 +23,7 @@ React Flow node objects  ──►  useLocalNodes (drag-time local copy)
 <ReactFlow nodeTypes={registry map} … />  → node React components render
 ```
 
-Edges follow the same shape through `useCanvasEdges` and `CustomEdge`
+Edges follow the same shape through `useCanvasEdges` and `EditableEdge`
 (see [edge-system.md](edge-system.md)).
 
 ## Stage responsibilities

@@ -8,8 +8,6 @@ import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadg
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { useSelectionDisablesControls } from "../../selection/selectionControls";
 
-export { PROTOCOL_COLORS } from "./constants";
-
 export type ApiGroupNodeData = {
   elementId: string;
   serviceName: string;

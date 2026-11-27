@@ -64,7 +64,7 @@ export function buildConnectionCountPerNode(
   return counts;
 }
 
-export function resolveHandleIndex(
+function resolveHandleIndex(
   connId: string,
   order: string[] | undefined,
   usageCount: number,

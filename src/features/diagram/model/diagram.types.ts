@@ -1,45 +1,15 @@
 export type {
   ComponentType,
-  PluginComponentType,
-  PluginTypedComponent,
   Component,
   ComponentPatch,
-  TypedComponentPatch,
-  C4Component,
   PanelComponent,
-  SwimlaneStyle,
-  NoteComponent,
-  AwsComponent,
-  GcpComponent,
-  AzureComponent,
-  K8sComponent,
-  OssComponent,
-  ApiGroupComponent,
-  ApiProtocol,
-  EndpointComponent,
-  UnknownComponent,
-  SvgComponent,
-  EndpointHandler,
-  HttpMethod,
   PanelKind,
   ExternalLink,
-  DbTableComponent,
-  DbColumn,
-  JsonViewerComponent,
   ProcessNodeComponent,
   FlowNodeShape,
-  ExternalElementComponent,
 } from "./component.types";
 
-export type {
-  Connection,
-  ConnectionStyle,
-  ConnectionIntent,
-  ConnectionDirection,
-  EdgeStyle,
-  StrokeStyle,
-  EdgeMarker,
-} from "./connection.types";
+export type { Connection, ConnectionIntent } from "./connection.types";
 
 export type {
   NodeLayout,

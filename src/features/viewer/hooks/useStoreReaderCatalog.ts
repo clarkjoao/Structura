@@ -7,7 +7,7 @@ import { buildReaderCatalog, type ReaderCatalog } from "@/features/diagram/utils
  * The names `diagram` shows, from the reader's own workspace.
  *
  * For a reader on the author's machine — a diagram opened by id, a file off
- * disk, a walkthrough scene — the workspace the editor reads is right here, so
+ * disk — the workspace the editor reads is right here, so
  * the reader shows the same service and linked-diagram names the editor does.
  * A link's reader has no such workspace, and uses the names the link carried.
  */

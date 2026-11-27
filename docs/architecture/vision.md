@@ -97,11 +97,11 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Model** | `features/diagram` | Domain types (Component, Connection, Flow, Diagram, Scene), type guards, the Zustand store (slices/selectors), pure model utilities. **No React.** | nothing app-level |
 | **Canvas** | `features/canvas` | React Flow rendering, node/edge descriptors, toolbar, panels, interaction, flow playback UI. Domain-agnostic engine + descriptor contributions. | Model |
 | **Workspace** | `pages/`, `infrastructure/persistence` | Folders, dashboard, model explorer, storage adapters (`IStoragePort`), sync, migrations. | Model |
-| **Interchange** | `lib/export-service`, mermaid import utils | Converting to/from external formats (draw.io, Mermaid, Structurizr, JSON). Boundary converters only — no format knowledge leaks inward. | Model |
+| **Interchange** | `lib/export-service`, mermaid import utils | Converting to/from external formats (draw.io, Mermaid, JSON; Structurizr is not implemented). Boundary converters only — no format knowledge leaks inward. | Model |
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
 | **Collaboration** | `features/collaboration`, `server/`, `go-server/` | Live sessions: field-level patches ordered by the relay, presence, soft locks. The relay's store is the source of truth only while a session lasts (ADR-0011). | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
-| **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram *Walkthroughs* feature was removed in 2026-08; see `docs/decisions/2026-08-26-remove-walkthroughs.md`. | Model, Canvas |
+| **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram narrative feature was removed; see `docs/decisions/`. | Model, Canvas |
 | **Sharing** | `features/viewer`, share/embed utils | Read-only viewer for shared diagrams. | Model, Canvas |
 
 Dependency rule: **everything may depend on Model; Model depends on nothing.**
@@ -256,11 +256,11 @@ Sequenced so each step is useful alone and none blocks `main`:
 | Horizon | Move | Why this order |
 | --- | --- | --- |
 | Now | **Docs, ADRs, SDD process** (this phase) | Alignment before construction. |
-| Next | **Domain component descriptors** — open the `ComponentType` bottleneck | Everything on the roadmap (VSM, Step Functions, Saga) is blocked on cheap new element types. |
+| Next | **Domain component descriptors** — open the `ComponentType` bottleneck | Everything on the roadmap (VSM, Saga) is blocked on cheap new element types. |
 | Next | **Command system** | Second-most-shared dependency: UI extensibility, shortcuts, palette, MCP all sit on it. |
 | Then | **Derived Model Index** (vision §6, step 2) | Unblocks Architecture Map, cross-diagram references, better AI — without migration. |
 | Then | **Contribution-point plugin architecture** (build-time, no runtime loader) | Formalizes the registries into one coherent Extension API. See [plugin-system-preparation.md](plugin-system-preparation.md). |
-| Started | **Diagram kinds** (profiles) — the contract and the first kind, *guided* ([ADR-0014](../adr/0014-diagram-kinds.md), [diagram-kinds.md](../concepts/diagram-kinds.md)); VSM, Step Functions, Saga next | Proof that the extension surface is real; plugin-contributed kinds follow once a second kind has exercised the contract. |
+| Started | **Diagram kinds** (profiles) — the contract and the first kind, *guided* ([ADR-0014](../adr/0014-diagram-kinds.md), [diagram-kinds.md](../concepts/diagram-kinds.md)); VSM, Saga next | Proof that the extension surface is real; plugin-contributed kinds follow once a second kind has exercised the contract. |
 | Later | **Identity promotion** (vision §6, step 3), then reassess model-first | The product decides, informed by usage. |
 
 Non-goals for this horizon: a plugin marketplace, a runtime plugin loader,

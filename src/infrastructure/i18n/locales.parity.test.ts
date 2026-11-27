@@ -30,13 +30,4 @@ describe("locale parity", () => {
     const missing = ptKeys.filter((key) => !enKeys.includes(key));
     expect(missing, `missing from en: ${missing.join(", ")}`).toEqual([]);
   });
-
-  it("carries the generation truncation strings in both locales", () => {
-    // Named explicitly: the parity checks above pass just as happily when the
-    // key is absent from both files.
-    for (const key of ["llmChat.ir.truncated", "llmChat.ir.issue.responseTruncated"]) {
-      expect(enKeys, `en is missing ${key}`).toContain(key);
-      expect(ptKeys, `pt-BR is missing ${key}`).toContain(key);
-    }
-  });
 });

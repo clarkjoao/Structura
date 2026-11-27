@@ -4,7 +4,7 @@
 
 The moonshot of the opscr integration (`.grill/opscr-yaml-diagram-integration.md`): edit a
 `.opscr.yaml` in VSCode and watch the diagram follow. The spike
-(`docs/investigation/vscode-preview-spike.md`) showed the renderer is ready — the existing viewer
+(`docs/investigation/archive/vscode-preview-spike.md`) showed the renderer is ready — the existing viewer
 renders a graph from a router-less entry — and that the missing piece is a picture that does not
 jump: re-running ELK on every edit swaps whole panels.
 

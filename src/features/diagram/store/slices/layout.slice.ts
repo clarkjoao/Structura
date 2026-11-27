@@ -320,6 +320,7 @@ export const layoutSlice = (set: (fn: (state: AppState) => void) => void, get: (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
+      pushHistory(state);
       const scene = resolveActiveVersion(d);
       if (scene && scene.addedComponents[elementId]) {
         const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
@@ -358,7 +359,9 @@ export const layoutSlice = (set: (fn: (state: AppState) => void) => void, get: (
         scene && scene.addedComponents[elementId]
           ? resolveNodeLayout(d, scene, elementId)
           : d.nodeLayouts[elementId];
-      if (layout) layout.zIndex = Math.round(zIndex);
+      if (!layout) return;
+      pushHistory(state);
+      layout.zIndex = Math.round(zIndex);
     });
   },
 
@@ -366,6 +369,7 @@ export const layoutSlice = (set: (fn: (state: AppState) => void) => void, get: (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
+      pushHistory(state);
       const scene = resolveActiveVersion(d);
       if (scene && scene.addedComponents[elementId]) {
         const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };

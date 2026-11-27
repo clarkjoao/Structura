@@ -10,7 +10,7 @@ import type {
 export const ALL_GROUPS = "all";
 
 /** Tiles per row in the browse grid. */
-export const CATALOG_GRID_COLUMNS = 4;
+const CATALOG_GRID_COLUMNS = 4;
 
 /** Tiles per group in the "All" view before "View all". */
 export const CATALOG_GROUP_PREVIEW = 8;

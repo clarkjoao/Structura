@@ -12,9 +12,9 @@ import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 
 export { DIAGRAM_EDGE_RF_TYPE } from "./edgeTypeKey";
 
-export const PRO_OPTIONS = { hideAttribution: true } as const;
+const PRO_OPTIONS = { hideAttribution: true } as const;
 
-export const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
+const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
 
 /*
  * Handed to <ReactFlow fitViewOptions> as these very objects, never a copy. React Flow's
@@ -24,7 +24,7 @@ export const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
  * min/max zoom among them) with these, so the opening zoom depended on whether the canvas
  * re-rendered before React Flow measured the nodes (audit R8).
  */
-export const FIT_VIEW_OPTIONS_WRITE: { readonly padding: number } = Object.freeze({
+const FIT_VIEW_OPTIONS_WRITE: { readonly padding: number } = Object.freeze({
   padding: FIT_VIEW_INITIAL_PADDING,
 });
 
@@ -42,10 +42,10 @@ export const PAN_ON_DRAG_MOUSE: [number, number] = [1, 2];
 
 export const MULTI_SELECTION_KEY_CODES = ["Meta", "Control", "Shift"] as const;
 
-export const PAN_ACTIVATION_KEY = "Space";
+const PAN_ACTIVATION_KEY = "Space";
 
 /** Neutralise RF's Shift=selection-mode so Shift stays a multi-select modifier. */
-export const SELECTION_KEY_CODE: string | null = null;
+const SELECTION_KEY_CODE: string | null = null;
 
 /**
  * Stable React Flow props derived from a surface policy.

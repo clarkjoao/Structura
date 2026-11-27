@@ -20,7 +20,6 @@ import { useMentionSearch } from "@/features/canvas/chat/useMentionSearch";
 import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
 import type { MentionItem, ActiveMention } from "@/features/llm/types";
-import type { DiagramIR } from "@/features/llm/ir/ir.types";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
 
@@ -49,7 +48,7 @@ function formatConversationForCopy(
 }
 
 /* ── Slash commands ───────────────────────────────────────────────────── */
-export interface SlashCommandDef {
+interface SlashCommandDef {
   names: string[]; // Both PT and EN aliases
   labelKey: string;
   descriptionKey: string;
@@ -60,11 +59,6 @@ const SLASH_COMMANDS: SlashCommandDef[] = [
     names: ["analisar", "analyze"],
     labelKey: "llmChat.slash.analyze",
     descriptionKey: "llmChat.slash.analyzeDesc",
-  },
-  {
-    names: ["exportar", "export"],
-    labelKey: "llmChat.slash.export",
-    descriptionKey: "llmChat.slash.exportDesc",
   },
   {
     names: ["limpar", "clear"],
@@ -140,8 +134,6 @@ export interface AssistantUIComposerProps {
   isLoading: boolean;
   disabled?: boolean;
   placeholder?: string;
-  /** Export IR to JSON when available */
-  onExportIR?: () => void;
   /** Clear chat history */
   onClearHistory?: () => void;
   /** Dismiss pending analysis */
@@ -154,21 +146,12 @@ export interface AssistantUIComposerRef {
 
 export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantUIComposerProps>(
   function AssistantUIComposer(
-    {
-      onSend,
-      onCancel,
-      isLoading,
-      disabled = false,
-      placeholder,
-      onExportIR: _onExportIR,
-      onClearHistory,
-    },
+    { onSend, onCancel, isLoading, disabled = false, placeholder, onClearHistory },
     ref,
   ) {
     const { t } = useTranslation();
     const { search } = useMentionSearch();
     const messages = useLLMStore((s) => s.messages);
-    const lastGeneratedIR = useLLMStore((s) => s.lastGeneratedIR);
     const activeDiagramId = useLLMStore((s) => s.activeDiagramId);
     const createThread = useLLMStore((s) => s.createThread);
 
@@ -318,23 +301,6 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
             break;
           }
 
-          case "exportar":
-          case "export": {
-            if (lastGeneratedIR) {
-              import("@/features/llm").then(({ downloadIR }) => {
-                downloadIR(lastGeneratedIR as DiagramIR);
-              });
-              toast(t("llmChat.slash.exported", { defaultValue: "IR exported!" }));
-            } else {
-              toast(
-                t("llmChat.slash.noIR", {
-                  defaultValue: "No IR generated yet. Use /generate first.",
-                }),
-              );
-            }
-            break;
-          }
-
           case "limpar":
           case "clear": {
             if (
@@ -374,7 +340,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           }
         }
       },
-      [lastGeneratedIR, messages, activeDiagramId, createThread, onClearHistory, onSend, t],
+      [messages, activeDiagramId, createThread, onClearHistory, onSend, t],
     );
 
     const handleClear = useCallback(() => {

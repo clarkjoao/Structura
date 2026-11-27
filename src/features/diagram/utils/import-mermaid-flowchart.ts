@@ -1,18 +1,27 @@
 import type {
   Component,
   Connection,
+  PanelComponent,
   ProcessNodeComponent,
   FlowNodeShape,
   NodeLayout,
   DiagramDirection,
 } from "../model/diagram.types";
+import { PanelKind } from "../enums";
 import { generateId } from "./generate-id";
+
+/** A non-fatal note about the import, translated by the caller (`flows.importDialog.warnings.*`). */
+export interface FlowchartImportWarning {
+  key: "subgraphDirectionIgnored" | "subgraphEdgeInside" | "subgraphUnclosed" | "subgraphStrayEnd";
+  params: Record<string, string | number>;
+}
 
 export interface FlowchartImportPlan {
   newComponents: Component[];
   newConnections: Connection[];
   layouts: NodeLayout[];
   errors: string[];
+  warnings: FlowchartImportWarning[];
   /**
    * The direction the header asks for (ADR-0013): `TD`/`TB` read top-to-bottom,
    * `LR` left-to-right. `BT` and `RL` have no Structura equivalent and take the
@@ -36,9 +45,13 @@ const GRID_H_GAP = 220;
 const GRID_V_GAP = 100;
 const NODE_W = 160;
 const NODE_H = 60;
+const PANEL_PADDING = 40;
+const EMPTY_PANEL_W = 240;
+const EMPTY_PANEL_H = 140;
 
 const FLOWCHART_HEADER_RE = /^flowchart\s+(LR|TD|TB|RL|BT)$/i;
 const NODE_ID_RE = /^[A-Za-z0-9_]+/;
+const BARE_NODE_RE = /^[A-Za-z0-9_]+$/;
 
 const NODE_SHAPE_PATTERNS: ReadonlyArray<{
   re: RegExp;
@@ -75,12 +88,44 @@ type AliasInfo = {
   shape: FlowNodeShape;
 };
 
+type SubgraphInfo = {
+  id: string;
+  title: string;
+  parentSubgraph: string | null;
+  panelId: string;
+};
+
+const SUBGRAPH_LINE_RE = /^subgraph(?:\s+(.*))?$/;
+const SUBGRAPH_ID_TITLE_RE = /^([A-Za-z0-9_]+)\s*\[\s*(.*?)\s*\]$/;
+const SUBGRAPH_DIRECTION_RE = /^direction\s+(TB|TD|BT|LR|RL)$/i;
+
+function unquote(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')
+    ? trimmed.slice(1, -1).trim()
+    : trimmed;
+}
+
+/** `subgraph id`, `subgraph id [Title]`, `subgraph id["Title"]`, `subgraph Title with spaces`. */
+function parseSubgraphHeader(rest: string): { id: string; title: string } | null {
+  const body = rest.trim();
+  if (!body) return null;
+  const withTitle = body.match(SUBGRAPH_ID_TITLE_RE);
+  if (withTitle) {
+    const title = unquote(withTitle[2]);
+    return { id: withTitle[1], title: title || withTitle[1] };
+  }
+  const title = unquote(body);
+  return title ? { id: title, title } : null;
+}
+
 function emptyPlan(errors: string[]): FlowchartImportPlan {
   return {
     newComponents: [],
     newConnections: [],
     layouts: [],
     errors,
+    warnings: [],
     direction: "LR",
     directionApproximated: false,
   };
@@ -294,6 +339,104 @@ function resolveConnection(
   return created;
 }
 
+/**
+ * One panel per subgraph, sized to hold its members (nested panels included). Member layouts
+ * come in absolute and leave relative to their parent, like the sequence importer's boxes; the
+ * scoped layout then arranges them and refits the panels.
+ */
+function buildSubgraphPanels(
+  subgraphs: Map<string, SubgraphInfo>,
+  nodes: Component[],
+  layouts: NodeLayout[],
+): { components: PanelComponent[]; layouts: NodeLayout[] } {
+  if (subgraphs.size === 0) return { components: [], layouts: [] };
+
+  const layoutById = new Map(layouts.map((l) => [l.elementId, l]));
+  const subByPanelId = new Map([...subgraphs.values()].map((sub) => [sub.panelId, sub]));
+  const childrenOf = new Map<string, string[]>();
+  const addChild = (parentPanelId: string, childId: string) => {
+    childrenOf.set(parentPanelId, [...(childrenOf.get(parentPanelId) ?? []), childId]);
+  };
+  for (const node of nodes) if (node.parentId) addChild(node.parentId, node.id);
+  for (const sub of subgraphs.values()) {
+    const parent = sub.parentSubgraph ? subgraphs.get(sub.parentSubgraph) : undefined;
+    if (parent) addChild(parent.panelId, sub.panelId);
+  }
+
+  const bounds = new Map<string, NodeLayout>();
+  const heightOf = new Map<string, number>();
+  const measure = (panelId: string): NodeLayout => {
+    const known = bounds.get(panelId);
+    if (known) return known;
+    const children = childrenOf.get(panelId) ?? [];
+    const boxes = children.map((childId) =>
+      subByPanelId.has(childId) ? measure(childId) : layoutById.get(childId),
+    );
+    const placed = boxes.filter((box): box is NodeLayout => box !== undefined);
+    heightOf.set(
+      panelId,
+      1 + Math.max(0, ...children.map((childId) => heightOf.get(childId) ?? 0)),
+    );
+    const box: NodeLayout =
+      placed.length === 0
+        ? { elementId: panelId, x: 0, y: 0, width: EMPTY_PANEL_W, height: EMPTY_PANEL_H }
+        : (() => {
+            const minX = Math.min(...placed.map((b) => b.x)) - PANEL_PADDING;
+            const minY = Math.min(...placed.map((b) => b.y)) - PANEL_PADDING;
+            const maxX = Math.max(...placed.map((b) => b.x + (b.width ?? NODE_W))) + PANEL_PADDING;
+            const maxY = Math.max(...placed.map((b) => b.y + (b.height ?? NODE_H))) + PANEL_PADDING;
+            return {
+              elementId: panelId,
+              x: minX,
+              y: minY,
+              width: maxX - minX,
+              height: maxY - minY,
+            };
+          })();
+    bounds.set(panelId, box);
+    return box;
+  };
+  for (const sub of subgraphs.values()) measure(sub.panelId);
+
+  const absolute = new Map<string, { x: number; y: number }>();
+  for (const [id, box] of bounds) absolute.set(id, { x: box.x, y: box.y });
+  for (const l of layouts) absolute.set(l.elementId, { x: l.x, y: l.y });
+
+  const components: PanelComponent[] = [];
+  const panelLayouts: NodeLayout[] = [];
+  for (const sub of subgraphs.values()) {
+    const box = bounds.get(sub.panelId)!;
+    const parent = sub.parentSubgraph ? subgraphs.get(sub.parentSubgraph) : undefined;
+    components.push({
+      id: sub.panelId,
+      name: sub.title,
+      description: "",
+      parentId: parent ? parent.panelId : null,
+      type: "panel",
+      panelKind: PanelKind.Default,
+    });
+    const origin = parent ? absolute.get(parent.panelId)! : { x: 0, y: 0 };
+    panelLayouts.push({
+      ...box,
+      x: box.x - origin.x,
+      y: box.y - origin.y,
+      zIndex: -(heightOf.get(sub.panelId) ?? 1),
+    });
+  }
+
+  // Members leave relative to their panel (panel origins are the absolute ones read above).
+  for (const node of nodes) {
+    const layout = layoutById.get(node.id);
+    const origin = node.parentId ? absolute.get(node.parentId) : undefined;
+    if (layout && origin) {
+      layout.x -= origin.x;
+      layout.y -= origin.y;
+    }
+  }
+
+  return { components, layouts: panelLayouts };
+}
+
 export function parseMermaidFlowchart(
   text: string,
   existingComponents: Record<string, Component>,
@@ -312,6 +455,11 @@ export function parseMermaidFlowchart(
   const header = directionOfHeader(firstContentLine);
 
   const errors: string[] = [];
+  const warnings: FlowchartImportWarning[] = [];
+  const subgraphs = new Map<string, SubgraphInfo>();
+  const subgraphStack: string[] = [];
+  const membership = new Map<string, string>();
+  let directionsIgnored = 0;
   const aliasOrder: string[] = [];
   const aliasInfo = new Map<string, AliasInfo>();
   const pendingEdges: Array<Omit<ParsedEdge, "consumed">> = [];
@@ -336,12 +484,55 @@ export function parseMermaidFlowchart(
     if (isCommentLine(line)) continue;
     if (FLOWCHART_HEADER_RE.test(line)) continue;
 
+    const subgraphMatch = line.match(SUBGRAPH_LINE_RE);
+    if (subgraphMatch) {
+      const header = parseSubgraphHeader(subgraphMatch[1] ?? "");
+      if (!header) {
+        errors.push(`Failed to parse line: ${line}`);
+        continue;
+      }
+      if (!subgraphs.has(header.id)) {
+        subgraphs.set(header.id, {
+          id: header.id,
+          title: header.title,
+          parentSubgraph: subgraphStack[subgraphStack.length - 1] ?? null,
+          panelId: generateId("comp"),
+        });
+      }
+      subgraphStack.push(header.id);
+      continue;
+    }
+    if (line === "end") {
+      if (subgraphStack.pop() === undefined) {
+        warnings.push({ key: "subgraphStrayEnd", params: {} });
+      }
+      continue;
+    }
+    if (subgraphStack.length > 0 && SUBGRAPH_DIRECTION_RE.test(line)) {
+      // A subgraph's own direction has no field on the panel; the diagram's reads along its axis.
+      directionsIgnored += 1;
+      continue;
+    }
+
+    const currentSubgraph = subgraphStack[subgraphStack.length - 1];
+    const assign = (alias: string) => {
+      // Mermaid keeps a node in the last subgraph that mentions it.
+      if (currentSubgraph) membership.set(alias, currentSubgraph);
+    };
+
+    if (BARE_NODE_RE.test(line)) {
+      registerAlias(line);
+      assign(line);
+      continue;
+    }
+
     let remaining = line;
     let lineHandled = false;
 
     const nodeDef = parseNodePrefix(remaining);
     if (nodeDef) {
       registerAlias(nodeDef.alias, { label: nodeDef.label, shape: nodeDef.shape });
+      assign(nodeDef.alias);
       remaining = remaining.slice(nodeDef.consumed).trim();
       lineHandled = true;
     }
@@ -353,6 +544,8 @@ export function parseMermaidFlowchart(
         remaining,
         (edge) => {
           registerAlias(edge.sourceAlias);
+          assign(edge.sourceAlias);
+          assign(edge.targetAlias);
           registerAlias(
             edge.targetAlias,
             edge.targetNodeDef
@@ -371,12 +564,25 @@ export function parseMermaidFlowchart(
     }
   }
 
+  if (subgraphStack.length > 0) {
+    warnings.push({ key: "subgraphUnclosed", params: { count: subgraphStack.length } });
+  }
+  if (directionsIgnored > 0) {
+    warnings.push({ key: "subgraphDirectionIgnored", params: { count: directionsIgnored } });
+  }
+
+  // A subgraph id used as an edge endpoint is the panel, not a node of its own.
+  for (let i = aliasOrder.length - 1; i >= 0; i -= 1) {
+    if (subgraphs.has(aliasOrder[i])) aliasOrder.splice(i, 1);
+  }
+
   const componentByLowerName = new Map<string, Component>();
   for (const component of Object.values(existingComponents)) {
     componentByLowerName.set(component.name.toLowerCase(), component);
   }
 
   const aliasToComponentId = new Map<string, string>();
+  for (const sub of subgraphs.values()) aliasToComponentId.set(sub.id, sub.panelId);
   const newComponents: Component[] = [];
   const layouts: NodeLayout[] = [];
   const newConnections: Connection[] = [];
@@ -391,11 +597,12 @@ export function parseMermaidFlowchart(
     }
 
     const id = generateId("comp");
+    const owner = membership.get(alias);
     const component: ProcessNodeComponent = {
       id,
       name: info.label,
       description: "",
-      parentId: null,
+      parentId: owner ? subgraphs.get(owner)!.panelId : null,
       type: "process-node",
       flowShape: info.shape,
     };
@@ -414,6 +621,20 @@ export function parseMermaidFlowchart(
     newComponentIndex += 1;
   }
 
+  const subgraphOfAlias = (alias: string): string | undefined =>
+    subgraphs.has(alias) ? alias : undefined;
+  /** Whether `alias` (a node or a subgraph) sits inside the subgraph `outer`, or is it. */
+  const isWithin = (alias: string, outer: string): boolean => {
+    let cursor: string | null | undefined = subgraphs.has(alias)
+      ? alias
+      : (membership.get(alias) ?? null);
+    while (cursor) {
+      if (cursor === outer) return true;
+      cursor = subgraphs.get(cursor)?.parentSubgraph;
+    }
+    return false;
+  };
+
   for (const edge of pendingEdges) {
     const sourceId = aliasToComponentId.get(edge.sourceAlias);
     const targetId = aliasToComponentId.get(edge.targetAlias);
@@ -421,14 +642,32 @@ export function parseMermaidFlowchart(
       errors.push(`Unresolved nodes in edge ${edge.sourceAlias} -> ${edge.targetAlias}`);
       continue;
     }
+    const sourceSub = subgraphOfAlias(edge.sourceAlias);
+    const targetSub = subgraphOfAlias(edge.targetAlias);
+    if (
+      (sourceSub && isWithin(edge.targetAlias, sourceSub)) ||
+      (targetSub && isWithin(edge.sourceAlias, targetSub))
+    ) {
+      // A panel pointing at its own contents (or the reverse) says nothing a panel does not.
+      warnings.push({
+        key: "subgraphEdgeInside",
+        params: { source: edge.sourceAlias, target: edge.targetAlias },
+      });
+      continue;
+    }
     resolveConnection(sourceId, targetId, edge.label, existingConnections, newConnections);
   }
+
+  const panels = buildSubgraphPanels(subgraphs, newComponents, layouts);
+  newComponents.push(...panels.components);
+  layouts.unshift(...panels.layouts);
 
   return {
     newComponents,
     newConnections,
     layouts,
     errors,
+    warnings,
     direction: header.direction,
     directionApproximated: header.approximated,
   };

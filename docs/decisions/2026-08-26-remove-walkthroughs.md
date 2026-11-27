@@ -9,6 +9,11 @@
 > `VITE_ENABLE_WALKTHROUGHS=true`. This record still describes why the original feature was
 > removed.
 
+> **Later note (2026-11):** the rebuilt module was removed again (card DC-010 of the
+> faxina). It was off by default in every build, so no visible functionality was lost. The
+> `.walkthrough.json` sidecar suffix stays recognised by the workspace scan so folders that
+> still hold those files keep opening cleanly.
+
 ## What Walkthroughs was
 
 Walkthroughs was a cross-diagram narrative feature. A `Walkthrough` was an

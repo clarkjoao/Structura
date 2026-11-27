@@ -70,7 +70,7 @@ export function patternMatches(pattern: Searchable, query: string): boolean {
 }
 
 /** A built-in pattern as the search reads it: its texts in the active language. */
-export function builtinSearchable(pattern: PatternTemplate): Searchable {
+function builtinSearchable(pattern: PatternTemplate): Searchable {
   return {
     name: i18n.t(patternNameKey(pattern)),
     description: i18n.t(patternDescriptionKey(pattern)),

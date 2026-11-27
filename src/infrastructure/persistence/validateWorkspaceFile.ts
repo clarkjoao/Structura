@@ -21,7 +21,7 @@ export type ValidationResult =
 export type ManifestValidationResult =
   { valid: true; manifest: WorkspaceManifest } | { valid: false; reason: string };
 
-/** Deletion marker written when physical file removal fails (see FileSystemAdapter.deleteDiagram). */
+/** Deletion marker older versions wrote when physical file removal failed; still recognised on read. */
 export function isDiagramTombstoneJson(raw: unknown): boolean {
   if (!raw || typeof raw !== "object") return false;
   return (raw as Record<string, unknown>).deleted === true;
@@ -70,7 +70,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
     if (!legacy) {
       return { valid: false, reason: "Invalid diagram format", raw };
     }
-    diagram = legacy;
+    diagram = migrateDiagram(legacy, 0);
   }
 
   // Validate required fields

@@ -77,14 +77,14 @@ describe("parseMermaidFlowchart", () => {
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
 
     const result = parseMermaidFlowchart(
-      ["flowchart LR", "A --> B", "subgraph cluster"].join("\n"),
+      ["flowchart LR", "A --> B", "??? not a line"].join("\n"),
       {},
       {},
       { x: 0, y: 0 },
     );
 
     expect(result.newComponents).toHaveLength(2);
-    expect(result.errors).toContain("Failed to parse line: subgraph cluster");
+    expect(result.errors).toContain("Failed to parse line: ??? not a line");
   });
 
   it("reuses existing component by name (case-insensitive)", () => {

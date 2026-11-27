@@ -27,13 +27,18 @@ const ALLOWED = new Set(
     "features/diagram/model/cloud-service-id.ts",
     // This test.
     "features/diagram/model/cloud-service-id.write-gate.test.ts",
+    // Frozen layout fixtures: persisted `Diagram` data, stored the way a saved
+    // file holds it (converted once from the retired generation format).
+    "features/canvas/layout/reference-diagrams.ts",
+    "features/canvas/layout/generated-diagrams/A-run1.ts",
+    "features/canvas/layout/generated-diagrams/A-run2.ts",
+    "features/canvas/layout/generated-diagrams/A-run3.ts",
+    "features/canvas/layout/generated-diagrams/B-run1.ts",
+    "features/canvas/layout/generated-diagrams/B-run2.ts",
+    "features/canvas/layout/generated-diagrams/B-run3.ts",
     // The v13 migration: it *is* the cutover, and it writes the field by
     // definition when upgrading a stored payload.
     "features/diagram/store/persist.config.ts",
-    // Builds the tolerant-*read* input (`CloudServiceIdFields`) for
-    // `resolveCloudServiceId`. The key appears on the way in, not on the way
-    // to storage.
-    "features/element-presets/components/ElementPresetPreviewCard.tsx",
     // Declares the plugin importer input (API 1.3 `PluginComponentInput.cloudServiceId`) for
     // the opscr projection. It is request data: the host writes the persisted field through
     // `cloudServiceIdWrite()` when it inserts the graph (`features/plugins/import-graph.ts`).
